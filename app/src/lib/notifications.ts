@@ -46,6 +46,49 @@ export function formatTripMessage(trip: {
   ].join('\n')
 }
 
+export async function formatReminderDigest(): Promise<string> {
+  const reminders = await prisma.reminder.findMany({ where: { enabled: true } })
+  const now = new Date()
+  const car = await prisma.car.findFirst()
+  const gpsTotal = (await prisma.trip.aggregate({ _sum: { distance: true } }))._sum.distance || 0
+  const currentKm = car?.initialOdometer != null ? car.initialOdometer + gpsTotal * car.calibrationFactor : null
+
+  const overdue: string[] = []
+  const soon: string[] = []
+  const ok: string[] = []
+
+  for (const r of reminders) {
+    let daysLeft: number | null = null
+    let kmLeft: number | null = null
+    if (r.nextDate) {
+      daysLeft = Math.ceil((r.nextDate.getTime() - now.getTime()) / 86400000)
+    }
+    if (r.nextOdometer && currentKm) {
+      kmLeft = Math.round(r.nextOdometer - currentKm)
+    }
+    const info = `${r.title}${daysLeft !== null ? (daysLeft <= 0 ? '已过期' + Math.abs(daysLeft) + '天' : daysLeft + '天后') : ''}${kmLeft !== null ? (kmLeft <= 0 ? ' | 里程已到' : ' | 还有' + kmLeft + 'km') : ''}`
+
+    if (daysLeft !== null && daysLeft <= 0) overdue.push(info)
+    else if (daysLeft !== null && daysLeft <= 14) soon.push(info)
+    else if (kmLeft !== null && kmLeft <= 0) overdue.push(info)
+    else if (kmLeft !== null && kmLeft <= 500) soon.push(info)
+    else if (daysLeft !== null || kmLeft !== null) ok.push(info)
+  }
+
+  if (overdue.length === 0 && soon.length === 0) return ''
+
+  const lines = ['⏰ 车行记 - 保养提醒']
+  if (overdue.length > 0) {
+    lines.push(''); lines.push('🔴 已过期：')
+    overdue.forEach(s => lines.push('  • ' + s))
+  }
+  if (soon.length > 0) {
+    lines.push(''); lines.push('🟡 即将到期：')
+    soon.forEach(s => lines.push('  • ' + s))
+  }
+  return lines.join('\n')
+}
+
 export async function formatDailyDigest(date: Date): Promise<string> {
   const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0)
   const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999)
