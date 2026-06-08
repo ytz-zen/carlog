@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Car {
+  id           String           @id @default(uuid())
+  name         String           @default("我的车")
+  vin          String?
+  createdAt    DateTime         @default(now())
+
+  tank         Tank
+  trips        Trip[]
+  fuelEvents   FuelEvent[]
+  notifConfig  NotificationConfig?
+}
+
+model Tank {
+  id           String      @id @default(uuid())
+  carId        String
+  car          Car         @relation(fields: [carId], references: [id])
+  name         String      @default("主油箱")
+  capacity     Float
+  createdAt    DateTime    @default(now())
+
+  trips        Trip[]
+  fuelEvents   FuelEvent[]
+}
+
+model GpsPoint {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  timestamp   DateTime
+  latitude    Float
+  longitude   Float
+  speed       Float
+  altitude    Float?
+  bearing     Float?
+  fuelLevel   Float?
+
+  @@index([tripId, timestamp])
+}
+
+model Trip {
+  id            String      @id @default(uuid())
+  tankId        String
+  tank          Tank        @relation(fields: [tankId], references: [id])
+  carId         String
+
+  startTime     DateTime
+  endTime       DateTime?
+  duration      Int?
+
+  distance      Float?
+  avgSpeed      Float?
+  maxSpeed      Float?
+
+  fuelConsumed  Float?
+  fuelPer100km  Float?
+
+  pointCount    Int         @default(0)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  gpsPoints     GpsPoint[]
+
+  @@index([carId, startTime])
+}
+
+model FuelEvent {
+  id          String   @id @default(uuid())
+  tankId      String
+  tank        Tank     @relation(fields: [tankId], references: [id])
+  carId       String
+  tripId      String?
+
+  timestamp   DateTime
+  fuelBefore  Float
+  fuelAfter   Float
+  fuelAdded   Float
+  odometer    Float?
+
+  isManual    Boolean  @default(false)
+  note        String?
+  price       Float?
+  totalPrice  Float?
+
+  createdAt   DateTime @default(now())
+
+  @@index([tankId, timestamp])
+}
+
+model NotificationConfig {
+  id          String   @id @default(uuid())
+  webhookUrl  String
+  carId       String
+  car         Car      @relation(fields: [carId], references: [id])
+
+  onTripEnd   Boolean  @default(true)
+  dailyDigest Boolean  @default(true)
+  dailyTime   String   @default("11:00")
+
+  showDistance  Boolean @default(true)
+  showFuel      Boolean @default(true)
+  showAvgSpeed  Boolean @default(true)
+  showMaxSpeed  Boolean @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

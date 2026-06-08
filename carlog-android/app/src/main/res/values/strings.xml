@@ -1,0 +1,18 @@
+<resources>
+    <string name="carlog_app_name">车行记</string>
+    <string name="carlog_subtitle">行驶轨迹记录</string>
+    <string name="carlog_btn_start">开始行驶</string>
+    <string name="carlog_btn_stop">结束行驶</string>
+    <string name="carlog_btn_settings">设置</string>
+    <string name="carlog_settings_title">车行记设置</string>
+    <string name="carlog_label_server">服务器地址</string>
+    <string name="carlog_hint_server">http://192.168.5.193:3000</string>
+    <string name="carlog_label_apikey">API Key</string>
+    <string name="carlog_hint_apikey">从服务器注册页面获取</string>
+    <string name="carlog_label_tank">油箱容量(升)</string>
+    <string name="carlog_hint_tank">60</string>
+    <string name="carlog_btn_save">保存</string>
+    <string name="carlog_notification_channel">GPS定位服务</string>
+    <string name="carlog_notification_desc">用于采集行车轨迹</string>
+    <string name="carlog_notification_title">车行记</string>
+</resources>

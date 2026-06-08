@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: carlog
+      POSTGRES_USER: carlog
+      POSTGRES_PASSWORD: carlog_secure_2026
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carlog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: ./app
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://carlog:carlog_secure_2026@db:5432/carlog
+      API_KEY: carlog_dev_key_2026
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
