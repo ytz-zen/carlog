@@ -8,15 +8,18 @@ datasource db {
 }
 
 model Car {
-  id           String           @id @default(uuid())
-  name         String           @default("我的车")
-  vin          String?
-  createdAt    DateTime         @default(now())
+  id              String           @id @default(uuid())
+  name            String           @default("我的车")
+  vin             String?
+  initialOdometer Float?                    // 第一次录入的表显里程(km)
+  calibrationFactor Float          @default(1.0)  // GPS→表显校正系数
+  createdAt       DateTime         @default(now())
 
-  tank         Tank
-  trips        Trip[]
-  fuelEvents   FuelEvent[]
-  notifConfig  NotificationConfig?
+  tank            Tank
+  trips           Trip[]
+  fuelEvents      FuelEvent[]
+  notifConfig     NotificationConfig?
+  odometerEntries OdometerEntry[]
 }
 
 model Tank {
@@ -94,6 +97,17 @@ model FuelEvent {
   createdAt   DateTime @default(now())
 
   @@index([tankId, timestamp])
+}
+
+model OdometerEntry {
+  id        String   @id @default(uuid())
+  carId     String
+  car       Car      @relation(fields: [carId], references: [id])
+  reading   Float             // 表显里程(km)
+  source    String   @default("manual") // manual | auto
+  timestamp DateTime @default(now())
+
+  @@index([carId, timestamp])
 }
 
 model NotificationConfig {
