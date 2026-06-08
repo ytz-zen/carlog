@@ -39,6 +39,8 @@ export default function ExpensePage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState({ category: 'other', amount: 0, date: new Date().toISOString().slice(0,10), odometer: '', description: '', note: '' })
   const [uploadFiles, setUploadFiles] = useState<FileList | null>(null)
+  // Fuel-specific: any 2 of price/volume/amount → calc 3rd
+  const [fuelInput, setFuelInput] = useState<{ price: string; volume: string; total: string }>({ price: '', volume: '', total: '' })
 
   const fetchExpenses = () => {
     const params = new URLSearchParams({ page: String(page), size: '20' })
@@ -58,7 +60,16 @@ export default function ExpensePage() {
   useEffect(() => { fetchExpenses(); fetchStats() }, [page, filterCategory])
 
   const saveExpense = async () => {
-    const body = { category: form.category, amount: form.amount, date: form.date, odometer: form.odometer ? parseFloat(form.odometer) : null, description: form.description, note: form.note }
+    // Sync fuel total → form.amount
+    const finalAmount = form.category === 'fuel' && fuelInput.total
+      ? parseFloat(fuelInput.total)
+      : form.amount
+    // Auto-set description for fuel with price & volume
+    let finalDesc = form.description
+    if (form.category === 'fuel' && fuelInput.price && fuelInput.volume && !form.description) {
+      finalDesc = `加油: ¥${fuelInput.price}/L × ${fuelInput.volume}L`
+    }
+    const body = { category: form.category, amount: finalAmount, date: form.date, odometer: form.odometer ? parseFloat(form.odometer) : null, description: finalDesc, note: form.note }
     const url = editId ? `/api/expenses/${editId}` : '/api/expenses'
     const method = editId ? 'PUT' : 'POST'
     const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-API-Key': 'carlog_dev_key_2026' }, body: JSON.stringify(body) })
@@ -88,6 +99,7 @@ export default function ExpensePage() {
 
   const openNew = () => {
     setForm({ category: 'other', amount: 0, date: new Date().toISOString().slice(0,10), odometer: '', description: '', note: '' })
+    setFuelInput({ price: '', volume: '', total: '' })
     setEditId(null); setShowModal(true)
   }
 
@@ -207,10 +219,55 @@ export default function ExpensePage() {
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500">金额 (¥)</label>
-                  <input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} className="w-full border rounded px-3 py-2 text-sm" />
-                </div>
+                {form.category === 'fuel' ? (
+                  <>
+                    <div>
+                      <label className="text-xs text-gray-500">单价 (¥/L)</label>
+                      <input type="number" step="0.01" value={fuelInput.price} onChange={e => {
+                        const v = e.target.value
+                        const vol = fuelInput.volume
+                        const tot = fuelInput.total
+                        const nv = v ? parseFloat(v) : 0
+                        // if price + volume → calc total
+                        if (v && vol) setFuelInput({ price: v, volume: vol, total: (nv * parseFloat(vol)).toFixed(2) })
+                        else { setFuelInput({ ...fuelInput, price: v }); setForm(f => ({ ...f, amount: tot ? parseFloat(tot) : 0 })) }
+                      }} className="w-full border rounded px-3 py-2 text-sm" placeholder="如 8.50" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">油量 (L)</label>
+                      <input type="number" step="0.1" value={fuelInput.volume} onChange={e => {
+                        const v = e.target.value
+                        const price = fuelInput.price
+                        const tot = fuelInput.total
+                        const nv = v ? parseFloat(v) : 0
+                        // if volume + price → calc total
+                        if (v && price) setFuelInput({ price, volume: v, total: (parseFloat(price) * nv).toFixed(2) })
+                        // if volume + total → calc price
+                        else if (v && tot) setFuelInput({ price: (parseFloat(tot) / nv).toFixed(2), volume: v, total: tot })
+                        else { setFuelInput({ ...fuelInput, volume: v }) }
+                      }} className="w-full border rounded px-3 py-2 text-sm" placeholder="如 45.0" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">总价 (¥)</label>
+                      <input type="number" step="0.01" value={fuelInput.total} onChange={e => {
+                        const v = e.target.value
+                        const price = fuelInput.price
+                        const vol = fuelInput.volume
+                        const nv = v ? parseFloat(v) : 0
+                        // if total + price → calc volume
+                        if (v && price) setFuelInput({ price, volume: (nv / parseFloat(price)).toFixed(1), total: v })
+                        // if total + volume → calc price
+                        else if (v && vol) setFuelInput({ price: (nv / parseFloat(vol)).toFixed(2), volume: vol, total: v })
+                        else { setFuelInput({ ...fuelInput, total: v }) }
+                      }} className="w-full border rounded px-3 py-2 text-sm font-semibold text-red-600" placeholder="自动计算" />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="text-xs text-gray-500">金额 (¥)</label>
+                    <input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} className="w-full border rounded px-3 py-2 text-sm" />
+                  </div>
+                )}
                 <div>
                   <label className="text-xs text-gray-500">日期</label>
                   <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="w-full border rounded px-3 py-2 text-sm" />
