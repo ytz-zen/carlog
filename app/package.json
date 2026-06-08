@@ -18,7 +18,8 @@
     "pg": "^8.13",
     "recharts": "^2.15.1",
     "date-fns": "^4.1.0",
-    "jose": "^5.9.6"
+    "jose": "^5.9.6",
+    "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -26,6 +27,7 @@
     "@types/react-dom": "^19",
     "@tailwindcss/postcss": "^4",
     "typescript": "^5",
+    "@types/leaflet": "^1.9.14",
     "prisma": "^6.5.0",
     "tailwindcss": "^4"
   }

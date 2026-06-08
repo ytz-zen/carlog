@@ -9,6 +9,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.*
 import androidx.core.app.NotificationCompat
+import androidx.work.*
 import com.carlog.R
 import com.carlog.data.db.CarLogDatabase
 import com.carlog.data.db.GpsPointEntity
@@ -19,6 +20,7 @@ import com.carlog.repo.UploadRepo
 import com.carlog.tracker.FuelEvent
 import kotlinx.coroutines.*
 import kotlin.math.*
+import java.util.concurrent.TimeUnit
 
 class GpsTrackService : Service(), LocationListener {
 
@@ -33,7 +35,6 @@ class GpsTrackService : Service(), LocationListener {
     private lateinit var locationManager: LocationManager
     private lateinit var db: CarLogDatabase
     private lateinit var tripDetector: TripDetector
-    private lateinit var oilDetector: OilDetector
     private lateinit var uploadRepo: UploadRepo
 
     private var currentTripId: String? = null
@@ -48,7 +49,45 @@ class GpsTrackService : Service(), LocationListener {
         db = CarLogDatabase.getInstance(this)
         uploadRepo = UploadRepo(this, db)
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification("开始追踪..."))
+        startForeground(NOTIFICATION_ID, buildNotification("启动中..."))
+        // Recover trips lost by sudden power-off
+        serviceScope.launch { recoverPendingTrips() }
+    }
+
+    /** Find un-ended trips from previous sudden power loss and upload them */
+    private suspend fun recoverPendingTrips() {
+        val active = db.tripDao().getActiveTrip()
+        if (active != null && active.endTime == null) {
+            val now = System.currentTimeMillis()
+            val points = db.tripDao().getGpsPoints(active.id)
+            var distance = 0f; var maxSpeed = 0f; var totalSpeed = 0f; var speedCount = 0
+            for (i in 1 until points.size) {
+                distance += haversine(points[i-1].latitude, points[i-1].longitude,
+                    points[i].latitude, points[i].longitude)
+                if (points[i].speed > maxSpeed) maxSpeed = points[i].speed
+                if (points[i].speed > 5f) { totalSpeed += points[i].speed; speedCount++ }
+            }
+            distance = round(distance * 10) / 10
+            val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
+            val duration = ((now - active.startTime) / 1000).toInt()
+
+            // End the trip in DB
+            db.tripDao().updateUploadState(active.id, "IDLE")
+
+            // Upload
+            uploadRepo.uploadTrip(active.id, now, distance, avgSpeed, maxSpeed, duration)
+        }
+
+        // Upload any pending GPS points from previous trips
+        val pendingTrips = db.tripDao().getPendingTrips()
+        pendingTrips.collect { trips ->
+            for (t in trips) {
+                if (t.uploadState != "DONE") {
+                    val remaining = db.tripDao().getPendingPointCount(t.id)
+                    if (remaining > 0) uploadRepo.uploadPendingPoints(t.id)
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -66,7 +105,6 @@ class GpsTrackService : Service(), LocationListener {
             carId = db.configDao().getString("car_id")
             tankId = db.configDao().getString("tank_id")
         }
-        oilDetector = OilDetector(tankCapacity, threshold = 10f)
 
         serviceScope.launch {
             val existing = db.tripDao().getActiveTrip()
@@ -116,10 +154,8 @@ class GpsTrackService : Service(), LocationListener {
                         if (diff > 10f) {
                             val fuelAdded = tankCapacity * diff / 100f
                             uploadRepo.uploadFuelEvent(
-                                FuelEvent(
-                                    fuelBefore = last, fuelAfter = fuel,
-                                    fuelAdded = round(fuelAdded * 10) / 10f,
-                                    timestamp = location.time
+                                FuelEvent(fuelBefore = last, fuelAfter = fuel,
+                                    fuelAdded = round(fuelAdded * 10) / 10f, timestamp = location.time
                                 ), tripId
                             )
                             updateNotification("加油检测: +${String.format("%.1f", fuelAdded)}L")
@@ -128,8 +164,8 @@ class GpsTrackService : Service(), LocationListener {
                     lastFuelLevel = fuel
                 }
 
-                // Periodic upload every 50 points
-                if (pointCount % 50 == 0) {
+                // Upload every 20 points (was 50) to reduce loss on sudden power-off
+                if (pointCount % 20 == 0) {
                     uploadRepo.uploadPendingPoints(tripId)
                 }
 
@@ -180,26 +216,17 @@ class GpsTrackService : Service(), LocationListener {
         currentTripId = null
         tripDetector = TripDetector()
         pointCount = 0
-
         val points = db.tripDao().getGpsPoints(tripId)
-        var distance = 0f
-        var maxSpeed = 0f
-        var totalSpeed = 0f
-        var speedCount = 0
-
+        var distance = 0f; var maxSpeed = 0f; var totalSpeed = 0f; var speedCount = 0
         for (i in 1 until points.size) {
-            distance += haversine(
-                points[i-1].latitude, points[i-1].longitude,
-                points[i].latitude, points[i].longitude
-            )
+            distance += haversine(points[i-1].latitude, points[i-1].longitude,
+                points[i].latitude, points[i].longitude)
             if (points[i].speed > maxSpeed) maxSpeed = points[i].speed
             if (points[i].speed > 5f) { totalSpeed += points[i].speed; speedCount++ }
         }
-
         distance = round(distance * 10) / 10
         val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
         val duration = ((endTime - db.tripDao().getTripById(tripId)!!.startTime) / 1000).toInt()
-
         uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration)
         updateNotification("行程结束: ${distance}km, ${duration}s")
     }
@@ -224,43 +251,30 @@ class GpsTrackService : Service(), LocationListener {
     }
 
     private fun updateNotification(text: String) {
-        val notification = buildNotification(text)
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID, notification)
+        val notif = buildNotification(text)
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIFICATION_ID, notif)
     }
 
     private fun buildNotification(text: String): Notification {
         val intent = Intent(this, com.carlog.ui.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
+        val pi = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentTitle("🚗 车行记")
-            .setContentText(text)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build()
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation).setContentTitle("🚗 车行记")
+            .setContentText(text).setContentIntent(pi).setOngoing(true).build()
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID, "GPS定位服务", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "用于采集行车轨迹" }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+            val ch = NotificationChannel(CHANNEL_ID, "GPS定位服务", NotificationManager.IMPORTANCE_LOW)
+            ch.description = "用于采集行车轨迹"
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(ch)
         }
     }
 
     override fun onBind(intent: Intent?) = null
-
     override fun onDestroy() {
-        super.onDestroy()
-        serviceScope.cancel()
-        try { locationManager.removeUpdates(this) } catch (e: Exception) {}
+        super.onDestroy(); serviceScope.cancel(); try { locationManager.removeUpdates(this) } catch (_: Exception) {}
     }
 }

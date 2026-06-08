@@ -35,6 +35,7 @@ export default function TripList({ limit = 20 }: { limit?: number }) {
           <th className="py-2 text-right">时长</th>
           <th className="py-2 text-right">均速</th>
           <th className="py-2 text-right">油耗</th>
+          <th className="py-2 text-center">轨迹</th>
         </tr></thead>
         <tbody>
           {trips.map(t => (
@@ -47,6 +48,9 @@ export default function TripList({ limit = 20 }: { limit?: number }) {
               <td className="py-2.5 text-right text-gray-600">{t.duration !== null ? fmt(t.duration) : '-'}</td>
               <td className="py-2.5 text-right text-gray-600">{t.avgSpeed !== null ? `${t.avgSpeed} km/h` : '-'}</td>
               <td className="py-2.5 text-right text-green-600">{t.fuelPer100km !== null ? `${t.fuelPer100km} L` : '-'}</td>
+              <td className="py-2.5 text-center">
+                <a href={`/trip/${t.id}`} className="text-blue-500 hover:text-blue-700 text-xs hover:underline">查看轨迹</a>
+              </td>
             </tr>
           ))}
         </tbody>
