@@ -45,6 +45,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-400">{new Date().toLocaleDateString('zh-CN')}</div>
             <a href="/expenses" className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1 hover:bg-blue-50 transition">💰 费用管理</a>
+            <a href="/reminders" className="text-sm text-orange-600 hover:text-orange-800 border border-orange-200 rounded px-3 py-1 hover:bg-orange-50 transition">⏰ 提醒</a>
             <button onClick={async () => {
               await fetch('/api/auth/logout', { method: 'POST' })
               window.location.href = '/login'

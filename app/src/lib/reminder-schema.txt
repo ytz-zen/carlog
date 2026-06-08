@@ -1,0 +1,19 @@
+model Reminder {
+  id           String    @id @default(uuid())
+  carId        String
+  car          Car       @relation(fields: [carId], references: [id])
+  title        String               // 如 "更换机油", "交保险"
+  category     String    @default("other") // maintenance|insurance|inspection|tire|other
+  remindType   String    @default("time")  // time|mileage|both
+  intervalDays Int?                  // 间隔天数（如保险365天，机油180天）
+  intervalKm   Float?                // 间隔里程（如机油5000km）
+  lastDate     DateTime?
+  lastOdometer Float?
+  nextDate     DateTime?
+  nextOdometer Float?
+  enabled      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([carId, nextDate])
+}

@@ -11,8 +11,8 @@ model Car {
   id              String           @id @default(uuid())
   name            String           @default("我的车")
   vin             String?
-  initialOdometer Float?                    // 第一次录入的表显里程(km)
-  calibrationFactor Float          @default(1.0)  // GPS→表显校正系数
+  initialOdometer Float?
+  calibrationFactor Float          @default(1.0)
   createdAt       DateTime         @default(now())
 
   tank            Tank
@@ -20,6 +20,8 @@ model Car {
   fuelEvents      FuelEvent[]
   notifConfig     NotificationConfig?
   odometerEntries OdometerEntry[]
+  expenses        Expense[]
+  reminders       Reminder[]
 }
 
 model Tank {
@@ -103,8 +105,8 @@ model OdometerEntry {
   id        String   @id @default(uuid())
   carId     String
   car       Car      @relation(fields: [carId], references: [id])
-  reading   Float             // 表显里程(km)
-  source    String   @default("manual") // manual | auto
+  reading   Float
+  source    String   @default("manual")
   timestamp DateTime @default(now())
 
   @@index([carId, timestamp])
@@ -114,7 +116,7 @@ model Expense {
   id           String       @id @default(uuid())
   carId        String
   car          Car          @relation(fields: [carId], references: [id])
-  category     String                  // insurance|fuel|parking|toll|fine|carWash|maintenance|repair|upgrade|other
+  category     String
   amount       Float
   date         DateTime
   odometer     Float?
@@ -138,6 +140,26 @@ model Attachment {
   mimetype   String
   size       Int
   createdAt  DateTime @default(now())
+}
+
+model Reminder {
+  id           String    @id @default(uuid())
+  carId        String
+  car          Car       @relation(fields: [carId], references: [id])
+  title        String
+  category     String    @default("other")
+  remindType   String    @default("time")
+  intervalDays Int?
+  intervalKm   Float?
+  lastDate     DateTime?
+  lastOdometer Float?
+  nextDate     DateTime?
+  nextOdometer Float?
+  enabled      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([carId, nextDate])
 }
 
 model NotificationConfig {
