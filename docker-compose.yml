@@ -29,7 +29,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - carlog_uploads:/app/uploads
     restart: unless-stopped
 
 volumes:
   pgdata:
+  carlog_uploads:

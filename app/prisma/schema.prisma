@@ -110,6 +110,36 @@ model OdometerEntry {
   @@index([carId, timestamp])
 }
 
+model Expense {
+  id           String       @id @default(uuid())
+  carId        String
+  car          Car          @relation(fields: [carId], references: [id])
+  category     String                  // insurance|fuel|parking|toll|fine|carWash|maintenance|repair|upgrade|other
+  amount       Float
+  date         DateTime
+  odometer     Float?
+  description  String?
+  note         String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  attachments  Attachment[]
+
+  @@index([carId, date])
+  @@index([carId, category])
+}
+
+model Attachment {
+  id         String   @id @default(uuid())
+  expenseId  String
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  filename   String
+  filepath   String
+  mimetype   String
+  size       Int
+  createdAt  DateTime @default(now())
+}
+
 model NotificationConfig {
   id          String   @id @default(uuid())
   webhookUrl  String
