@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
+import { checkCookieAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
+  if (!await checkCookieAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1')
   const size = parseInt(searchParams.get('size') || '20')

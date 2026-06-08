@@ -17,7 +17,8 @@
     "@prisma/adapter-pg": "^6.5.0",
     "pg": "^8.13",
     "recharts": "^2.15.1",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "jose": "^5.9.6"
   },
   "devDependencies": {
     "@types/node": "^22",

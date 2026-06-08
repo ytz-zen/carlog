@@ -22,6 +22,8 @@ services:
     environment:
       DATABASE_URL: postgresql://carlog:carlog_secure_2026@db:5432/carlog
       API_KEY: carlog_dev_key_2026
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-carlog_admin_2026}
+      JWT_SECRET: ${JWT_SECRET:-}
       NEXT_PUBLIC_API_URL: http://localhost:3012
       NODE_ENV: production
     depends_on:

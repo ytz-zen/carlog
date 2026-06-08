@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
+import { checkCookieAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { addDays, subDays, startOfDay } from 'date-fns'
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await checkCookieAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   const now = new Date()
   const startToday = startOfDay(now)
   const startWeek = startOfDay(subDays(now, now.getDay() || 7))

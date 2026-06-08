@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
+import { checkCookieAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { subDays, startOfDay, eachDayOfInterval, format, eachWeekOfInterval, endOfWeek } from 'date-fns'
 
 export async function GET(request: NextRequest) {
+  if (!await checkCookieAuth(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   const { searchParams } = new URL(request.url)
   const granularity = searchParams.get('granularity') || 'day'
   const period = parseInt(searchParams.get('period') || '30')
