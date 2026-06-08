@@ -4,6 +4,7 @@ import android.content.Context
 import com.carlog.data.db.CarLogDatabase
 import com.carlog.tracker.FuelEvent
 import com.google.gson.Gson
+import kotlinx.coroutines.runBlocking
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -26,10 +27,8 @@ class UploadRepo(
 
     private val gson = Gson()
 
-    private fun getApiKey(): String? = db.configDao().getString("api_key")
-
-    private fun getBaseUrl(): String =
-        db.configDao().getString("server_url") ?: "http://192.168.5.193:3000"
+    private fun getApiKey(): String? = runBlocking { db.configDao().getString("api_key") }
+    private fun getBaseUrl(): String = runBlocking { db.configDao().getString("server_url") } ?: "http://192.168.5.193:3000"
 
     suspend fun uploadPendingPoints(tripId: String) {
         val apiKey = getApiKey() ?: return

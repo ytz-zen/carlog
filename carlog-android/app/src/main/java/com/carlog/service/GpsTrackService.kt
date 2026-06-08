@@ -3,6 +3,7 @@ package com.carlog.service
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -15,7 +16,9 @@ import com.carlog.data.db.TripEntity
 import com.carlog.tracker.TripDetector
 import com.carlog.tracker.OilDetector
 import com.carlog.repo.UploadRepo
+import com.carlog.tracker.FuelEvent
 import kotlinx.coroutines.*
+import kotlin.math.*
 
 class GpsTrackService : Service(), LocationListener {
 
@@ -58,10 +61,12 @@ class GpsTrackService : Service(), LocationListener {
 
     private fun startTracking() {
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        tankCapacity = db.configDao().getString("tank_capacity")?.toFloatOrNull() ?: 60f
+        runBlocking {
+            tankCapacity = db.configDao().getString("tank_capacity")?.toFloatOrNull() ?: 60f
+            carId = db.configDao().getString("car_id")
+            tankId = db.configDao().getString("tank_id")
+        }
         oilDetector = OilDetector(tankCapacity, threshold = 10f)
-        carId = db.configDao().getString("car_id")
-        tankId = db.configDao().getString("tank_id")
 
         serviceScope.launch {
             val existing = db.tripDao().getActiveTrip()
@@ -78,6 +83,14 @@ class GpsTrackService : Service(), LocationListener {
         } catch (e: SecurityException) {}
 
         updateNotification("追踪中...")
+    }
+
+    private fun stopTracking() {
+        try { locationManager.removeUpdates(this) } catch (_: Exception) {}
+        serviceScope.launch {
+            currentTripId?.let { endCurrentTrip(System.currentTimeMillis()) }
+        }
+        stopSelf()
     }
 
     override fun onLocationChanged(location: Location) {
@@ -103,9 +116,9 @@ class GpsTrackService : Service(), LocationListener {
                         if (diff > 10f) {
                             val fuelAdded = tankCapacity * diff / 100f
                             uploadRepo.uploadFuelEvent(
-                                com.carlog.tracker.FuelEvent(
+                                FuelEvent(
                                     fuelBefore = last, fuelAfter = fuel,
-                                    fuelAdded = Math.round(fuelAdded * 10) / 10f,
+                                    fuelAdded = round(fuelAdded * 10) / 10f,
                                     timestamp = location.time
                                 ), tripId
                             )
@@ -124,6 +137,10 @@ class GpsTrackService : Service(), LocationListener {
             }
         }
     }
+
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+    override fun onProviderEnabled(provider: String) {}
+    override fun onProviderDisabled(provider: String) {}
 
     private suspend fun handleTripState(speed: Float, timestamp: Long): String? {
         if (currentTripId == null) {
@@ -150,7 +167,6 @@ class GpsTrackService : Service(), LocationListener {
             if (tripDetector.state == TripDetector.TripState.IDLE) {
                 if (tripDetector.idleDuration >= 5 * 60 * 1000L) {
                     endCurrentTrip(timestamp)
-                    tripDetector = TripDetector()
                 }
             } else {
                 tripDetector.resetIdleTimer()
@@ -162,6 +178,7 @@ class GpsTrackService : Service(), LocationListener {
     private suspend fun endCurrentTrip(endTime: Long) {
         val tripId = currentTripId ?: return
         currentTripId = null
+        tripDetector = TripDetector()
         pointCount = 0
 
         val points = db.tripDao().getGpsPoints(tripId)
@@ -179,8 +196,8 @@ class GpsTrackService : Service(), LocationListener {
             if (points[i].speed > 5f) { totalSpeed += points[i].speed; speedCount++ }
         }
 
-        distance = kotlin.math.round(distance * 10) / 10
-        val avgSpeed = if (speedCount > 0) kotlin.math.round(totalSpeed / speedCount * 10) / 10f else 0f
+        distance = round(distance * 10) / 10
+        val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
         val duration = ((endTime - db.tripDao().getTripById(tripId)!!.startTime) / 1000).toInt()
 
         uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration)
@@ -189,12 +206,12 @@ class GpsTrackService : Service(), LocationListener {
 
     private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
         val R = 6371f
-        val dLat = Math.toRadians(lat2 - lat1).toFloat()
-        val dLon = Math.toRadians(lon2 - lon1).toFloat()
-        val a = kotlin.math.sin(dLat / 2) * kotlin.math.sin(dLat / 2) +
-                kotlin.math.cos(Math.toRadians(lat1)) * kotlin.math.cos(Math.toRadians(lat2)) *
-                kotlin.math.sin(dLon / 2) * kotlin.math.sin(dLon / 2)
-        return R * 2f * kotlin.math.atan2(kotlin.math.sqrt(a.toDouble()), kotlin.math.sqrt(1.0 - a.toDouble()))
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+        return (R * 2f * atan2(sqrt(a), sqrt(1.0 - a))).toFloat()
     }
 
     private fun readFuelLevel(): Float? {
@@ -239,7 +256,7 @@ class GpsTrackService : Service(), LocationListener {
         }
     }
 
-    override fun onBinder(intent: Intent?) = null
+    override fun onBind(intent: Intent?) = null
 
     override fun onDestroy() {
         super.onDestroy()
