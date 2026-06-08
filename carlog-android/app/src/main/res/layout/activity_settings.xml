@@ -5,24 +5,24 @@
         android:orientation="vertical">
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="carlog_settings_title" android:textSize="24sp" android:textStyle="bold" android:layout_marginBottom="24dp" />
+            android:text="@string/carlog_settings_title" android:textSize="24sp" android:textStyle="bold" android:layout_marginBottom="24dp" />
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="carlog_label_server" android:textSize="14sp" android:layout_marginTop="8dp" />
+            android:text="@string/carlog_label_server" android:textSize="14sp" android:layout_marginTop="8dp" />
         <EditText android:id="@+id/etServerUrl" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="carlog_hint_server" android:inputType="textUri" />
+            android:hint="@string/carlog_hint_server" android:inputType="textUri" />
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="carlog_label_apikey" android:textSize="14sp" android:layout_marginTop="16dp" />
+            android:text="@string/carlog_label_apikey" android:textSize="14sp" android:layout_marginTop="16dp" />
         <EditText android:id="@+id/etApiKey" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="carlog_hint_apikey" android:inputType="textPassword" />
+            android:hint="@string/carlog_hint_apikey" android:inputType="textPassword" />
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="carlog_label_tank" android:textSize="14sp" android:layout_marginTop="16dp" />
+            android:text="@string/carlog_label_tank" android:textSize="14sp" android:layout_marginTop="16dp" />
         <EditText android:id="@+id/etTankCapacity" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="carlog_hint_tank" android:inputType="numberDecimal" />
+            android:hint="@string/carlog_hint_tank" android:inputType="numberDecimal" />
 
         <Button android:id="@+id/btnSave" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="carlog_btn_save" android:layout_marginTop="24dp" android:padding="16dp" />
+            android:text="@string/carlog_btn_save" android:layout_marginTop="24dp" android:padding="16dp" />
     </LinearLayout>
 </ScrollView>
