@@ -28,7 +28,7 @@ class UploadRepo(
     private val gson = Gson()
 
     private fun getApiKey(): String? = runBlocking { db.configDao().getString("api_key") }
-    private fun getBaseUrl(): String = runBlocking { db.configDao().getString("server_url") } ?: "http://192.168.5.193:3000"
+    private fun getBaseUrl(): String = runBlocking { db.configDao().getString("server_url") } ?: "http://192.168.5.193:3012"
 
     suspend fun uploadPendingPoints(tripId: String) {
         val apiKey = getApiKey() ?: return

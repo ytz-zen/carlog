@@ -18,11 +18,11 @@ services:
   app:
     build: ./app
     ports:
-      - "3000:3000"
+      - "3012:3000"
     environment:
       DATABASE_URL: postgresql://carlog:carlog_secure_2026@db:5432/carlog
       API_KEY: carlog_dev_key_2026
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3012
       NODE_ENV: production
     depends_on:
       db:
