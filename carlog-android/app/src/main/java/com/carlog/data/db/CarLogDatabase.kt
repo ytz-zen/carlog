@@ -60,7 +60,7 @@ data class TripEntity(
     val uploadState: String = "IDLE"
 )
 
-@Entity(tableName = "gps_points", primaryKeys = ["id"])
+@Entity(tableName = "gps_points")
 data class GpsPointEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val tripId: String,

@@ -165,7 +165,10 @@ class GpsTrackService : Service(), LocationListener {
         pointCount = 0
 
         val points = db.tripDao().getGpsPoints(tripId)
-        var distance = 0f, maxSpeed = 0f, totalSpeed = 0f, speedCount = 0
+        var distance = 0f
+        var maxSpeed = 0f
+        var totalSpeed = 0f
+        var speedCount = 0
 
         for (i in 1 until points.size) {
             distance += haversine(
