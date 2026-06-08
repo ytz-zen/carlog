@@ -34,7 +34,15 @@ export default function DashboardPage() {
             <div><h1 className="text-xl font-bold text-gray-800">车行记</h1>
             <p className="text-xs text-gray-400">CarLog - 行驶记录与分析</p></div>
           </div>
-          <div className="text-sm text-gray-400">{new Date().toLocaleDateString('zh-CN')}</div>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-400">{new Date().toLocaleDateString('zh-CN')}</div>
+            <button onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' })
+              window.location.href = '/login'
+            }} className="text-sm text-red-500 hover:text-red-700 border border-red-200 rounded px-3 py-1 hover:bg-red-50 transition">
+              退出登录
+            </button>
+          </div>
         </div>
       </header>
 
