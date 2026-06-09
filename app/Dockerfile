@@ -7,9 +7,9 @@ RUN npm config set registry https://registry.npmmirror.com && \
     apt-get update -y && apt-get install -y openssl && \
     rm -rf /var/lib/apt/lists/*
 
-# 装依赖
-COPY package.json ./
-RUN npm install && npm cache clean --force
+# 装依赖（有 lockfile 用 ci 更快）
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci && npm cache clean --force; else npm install && npm cache clean --force; fi
 
 # 复制源码 + 构建
 COPY . .
