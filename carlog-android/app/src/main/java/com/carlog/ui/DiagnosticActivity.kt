@@ -226,10 +226,14 @@ class DiagnosticActivity : AppCompatActivity() {
                 tv.text = buildString {
                     append("车辆名称: $carName"); append('\n')
                     append("车辆ID: $carId..."); append('\n')
-                    append("油箱ID: $tankId..."); append('\n')
+                    append("油箱ID: $tankId..."); append('、')
                     append("油箱容量: ${tankCap}L"); append('\n')
                     append("服务器: $server"); append('\n')
                     append("API Key: $key...")
+                }
+                // 提示开机自启
+                tv.append("\n\n📌 如需开机自动追踪，请在系统设置中允许")
+                tv.append("\n    APP自启动权限（不同机型名称不同）")
                 }
             }
         }

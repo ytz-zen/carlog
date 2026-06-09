@@ -24,7 +24,10 @@
             android:foregroundServiceType="location"
             android:exported="false" />
         <receiver android:name=".receiver.BootReceiver" android:exported="true">
-            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
         </receiver>
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
         <activity android:name=".ui.DiagnosticActivity" android:exported="false" />
