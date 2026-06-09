@@ -8,6 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.carlog.R
 import com.carlog.data.db.CarLogDatabase
 import com.carlog.repo.UploadRepo
+import com.carlog.tracker.ObdReader
+import com.carlog.tracker.ObdData
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 
@@ -17,6 +19,8 @@ class DiagnosticActivity : AppCompatActivity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val gson = Gson()
     private val logLines = mutableListOf<String>()
+    private var obdReader: ObdReader? = null
+    private var obdConnected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,10 +84,56 @@ class DiagnosticActivity : AppCompatActivity() {
                 refreshLocal(tvLocal)
             }
         }
+
+        // OBD Connect
+        findViewById<Button>(R.id.btnObdConnect).setOnClickListener {
+            scope.launch { handleObdToggle(tvObd, tvLog) }
+        }
+    }
+
+    private suspend fun handleObdToggle(tvObd: TextView, tvLog: TextView) {
+        val btn = findViewById<Button>(R.id.btnObdConnect)
+        if (obdConnected) {
+            obdReader?.disconnect(); obdReader = null; obdConnected = false
+            btn.text = "连接 OBD"; tvObd.text = "未连接"; addLog(tvLog, "🔌 OBD 已断开")
+        } else {
+            btn.text = "连接中..."; addLog(tvLog, "🔌 正在搜索 OBD 设备...")
+            withContext(Dispatchers.IO) {
+                val reader = ObdReader()
+                val device = reader.findObdDevice()
+                if (device != null) {
+                    addLog(tvLog, "🔌 找到设备: ${device.name}")
+                    val err = reader.connect(device)
+                    if (err == null) {
+                        obdReader = reader; obdConnected = true
+                        val data = reader.readData()
+                        withContext(Dispatchers.Main) {
+                            updateObdDisplay(tvObd, data)
+                            btn.text = "断开 OBD"
+                            addLog(tvLog, "✅ OBD 连接成功 油量: ${data.fuelLevel?.let{"%.1f%%".format(it)} ?: "读取中"}")
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) { btn.text = "连接 OBD"; tvObd.text = "❌ $err"; addLog(tvLog, "❌ OBD 连接失败: $err") }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) { btn.text = "连接 OBD"; tvObd.text = "⚠️ 未找到已配对的 OBD 设备\n请先在系统蓝牙设置中配对"; addLog(tvLog, "⚠️ 未找到已配对的 OBD 设备") }
+                }
+            }
+        }
+    }
+
+    private fun updateObdDisplay(tv: TextView, data: com.carlog.tracker.ObdData) {
+        tv.text = buildString {
+            append(if (data.connected) "✅ 已连接" else "未连接"); append('\n')
+            data.fuelLevel?.let { append("⛽ 油量: %.1f%%".format(it)); append('\n') }
+            data.rpm?.let { append("🔄 转速: ${it} RPM"); append('\n') }
+            data.speed?.let { append("🚗 车速: %.0f km/h".format(it)); append('\n') }
+            data.coolantTemp?.let { append("🌡️ 水温: ${it}°C"); append('\n') }
+            data.error?.let { append("⚠️ 错误: $it") }
+        }
     }
 
     private suspend fun refreshAll(tvGps: TextView, tvServer: TextView, tvLocal: TextView, tvConfig: TextView) {
-        refreshGps(tvGps)
         refreshServer(tvServer)
         refreshLocal(tvLocal)
         refreshConfig(tvConfig)

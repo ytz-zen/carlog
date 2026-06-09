@@ -62,6 +62,23 @@
                 android:layout_marginTop="8dp" />
         </LinearLayout>
 
+        <!-- OBD Section -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#ffffff"
+            android:padding="16dp" android:layout_marginBottom="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="🔌 OBD 车辆数据" android:textSize="16sp" android:textStyle="bold"
+                android:textColor="#1e293b" android:layout_marginBottom="12dp" />
+            <TextView android:id="@+id/diagObdInfo" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="未连接"
+                android:textSize="13sp" android:textColor="#475569" android:lineSpacingExtra="4dp" />
+            <Button android:id="@+id/btnObdConnect" android:layout_width="match_parent"
+                android:layout_height="36dp" android:text="连接 OBD"
+                android:textAllCaps="false" android:textSize="12sp"
+                android:backgroundTint="#4f46e5" android:textColor="#fff"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
         <!-- Config Section -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:background="#ffffff"
