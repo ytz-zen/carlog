@@ -43,6 +43,7 @@ class GpsTrackService : Service(), LocationListener {
     private var tankCapacity: Float = 60f
     private var pointCount = 0
     private var lastFuelLevel: Float? = null
+    private var manualMode = false  // 手动模式：不自动开始/结束
 
     override fun onCreate() {
         super.onCreate()
@@ -142,6 +143,7 @@ class GpsTrackService : Service(), LocationListener {
         // 手动点击"开始行驶"时立即创建行程
         serviceScope.launch {
             if (currentTripId == null) {
+                manualMode = true  // 标记为手动模式
                 val carId2 = carId ?: return@launch
                 val tankId2 = tankId ?: return@launch
                 val trip = TripEntity(
@@ -151,13 +153,14 @@ class GpsTrackService : Service(), LocationListener {
                 db.tripDao().insertTrip(trip)
                 currentTripId = trip.id
                 pointCount = 0
-                updateNotification("行程已开始")
+                updateNotification("手动追踪中")
             }
         }
     }
 
     private fun stopTracking() {
         try { locationManager.removeUpdates(this) } catch (_: Exception) {}
+        manualMode = false
         serviceScope.launch {
             currentTripId?.let { endCurrentTrip(System.currentTimeMillis()) }
         }
@@ -212,6 +215,10 @@ class GpsTrackService : Service(), LocationListener {
     override fun onProviderDisabled(provider: String) {}
 
     private suspend fun handleTripState(speed: Float, timestamp: Long): String? {
+        if (manualMode) {
+            // 手动模式：不自动开始/结束，只记录GPS点
+            return currentTripId
+        }
         if (currentTripId == null) {
             tripDetector.onSpeedChange(speed)
             if (tripDetector.state == TripDetector.TripState.STARTED) {
