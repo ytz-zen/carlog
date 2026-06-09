@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
 
-  const where: Record<string, unknown> = {}
+  const where: Record<string, any> = {}
   if (startDate || endDate) {
-    where.startTime = {}
+    where.startTime = {} as Record<string, Date>
     if (startDate) where.startTime.gte = new Date(startDate)
     if (endDate) where.startTime.lte = new Date(endDate)
   }
