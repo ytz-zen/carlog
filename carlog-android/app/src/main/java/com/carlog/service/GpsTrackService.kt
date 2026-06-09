@@ -46,7 +46,7 @@ class GpsTrackService : Service(), LocationListener {
     private val serviceStartTime = System.currentTimeMillis()
 
     private fun log(msg: String) {
-        android.util.Log.d("CarLog", "[SVC] $msg")
+        com.carlog.tracker.LogBuffer.add("SVC", msg)
     }
 
     override fun onCreate() {

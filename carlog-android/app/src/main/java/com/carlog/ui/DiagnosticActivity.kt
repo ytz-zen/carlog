@@ -10,6 +10,7 @@ import com.carlog.data.db.CarLogDatabase
 import com.carlog.repo.UploadRepo
 import com.carlog.tracker.ObdReader
 import com.carlog.tracker.ObdData
+import com.carlog.tracker.LogBuffer
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 
@@ -18,7 +19,6 @@ class DiagnosticActivity : AppCompatActivity() {
     private lateinit var uploadRepo: UploadRepo
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val gson = Gson()
-    private val logLines = mutableListOf<String>()
     private var obdReader: ObdReader? = null
     private var obdConnected = false
 
@@ -89,6 +89,14 @@ class DiagnosticActivity : AppCompatActivity() {
         val tvObd = findViewById<TextView>(R.id.diagObdInfo)
         findViewById<Button>(R.id.btnObdConnect).setOnClickListener {
             scope.launch { handleObdToggle(tvObd, tvLog) }
+        }
+
+        // 定时刷新日志（每5秒）
+        scope.launch {
+            while (isActive) {
+                refreshLog(tvLog)
+                delay(5000)
+            }
         }
     }
 
@@ -224,10 +232,13 @@ class DiagnosticActivity : AppCompatActivity() {
     }
 
     private fun addLog(tv: TextView, msg: String) {
-        val ts = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.CHINA).format(java.util.Date())
-        logLines.add("[$ts] $msg")
-        if (logLines.size > 50) logLines.removeAt(0)
-        tv.text = logLines.joinToString("\n")
+        LogBuffer.add("DIAG", msg)
+        tv.text = LogBuffer.getAll().joinToString("\n")
+    }
+
+    /** 定时刷新日志显示 */
+    private fun refreshLog(tv: TextView) {
+        tv.text = LogBuffer.getAll().joinToString("\n")
     }
 
     override fun onDestroy() {
