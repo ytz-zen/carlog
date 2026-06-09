@@ -50,7 +50,8 @@ class GpsTrackService : Service(), LocationListener {
         uploadRepo = UploadRepo(this, db)
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification("启动中..."))
-        // Recover trips lost by sudden power-off
+        // 自动开始追踪（开应用即开始，不用等按按钮）
+        tripDetector = TripDetector()
         serviceScope.launch { recoverPendingTrips() }
     }
 
@@ -115,6 +116,7 @@ class GpsTrackService : Service(), LocationListener {
 
     private fun startTracking() {
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        tripDetector = TripDetector()  // 初始化行程检测器
         runBlocking {
             tankCapacity = db.configDao().getString("tank_capacity")?.toFloatOrNull() ?: 60f
             carId = db.configDao().getString("car_id")

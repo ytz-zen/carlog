@@ -52,10 +52,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Initial check
+        // Initial check + auto-start tracking
         scope.launch {
             checkServer(tvServer)
             checkGps(tvGps)
+            // Auto-start tracking service
+            startForegroundService(Intent(this@MainActivity, GpsTrackService::class.java).apply {
+                action = GpsTrackService.ACTION_START
+            })
         }
 
         btnStart.setOnClickListener {
