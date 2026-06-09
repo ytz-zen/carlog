@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { checkCookieAuth } from '@/lib/auth'
+import { checkCookieAuth, getApiKey } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key')
