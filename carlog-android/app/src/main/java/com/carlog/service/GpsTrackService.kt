@@ -144,7 +144,7 @@ class GpsTrackService : Service(), LocationListener {
             ACTION_START -> startTracking()
             ACTION_STOP -> stopTracking()
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun startTracking() {

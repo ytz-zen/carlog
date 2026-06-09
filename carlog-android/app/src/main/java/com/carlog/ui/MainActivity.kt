@@ -4,6 +4,7 @@ import android.content.Intent
 import android.location.LocationManager
 import android.os.Bundle
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.carlog.R
 import com.carlog.data.db.CarLogDatabase
@@ -17,6 +18,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_main)
         db = CarLogDatabase.getInstance(this)
 
@@ -71,11 +73,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnStop.setOnClickListener {
-            startService(Intent(this, GpsTrackService::class.java).apply {
-                action = GpsTrackService.ACTION_STOP
-            })
-            tvTrip.text = "状态: ⏹️ 已停止"
-            tvInfo.text = "手动结束行程"
+            AlertDialog.Builder(this)
+                .setTitle("结束行程")
+                .setMessage("确定结束当前行程？")
+                .setPositiveButton("确定") { _, _ ->
+                    startService(Intent(this, GpsTrackService::class.java).apply {
+                        action = GpsTrackService.ACTION_STOP
+                    })
+                    tvTrip.text = "状态: ⏹️ 已结束"
+                    tvInfo.text = "行程数据已上传"
+                }
+                .setNegativeButton("取消", null)
+                .show()
         }
 
         btnSettings.setOnClickListener {

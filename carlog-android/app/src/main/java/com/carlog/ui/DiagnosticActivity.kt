@@ -24,6 +24,7 @@ class DiagnosticActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_diagnostic)
         db = CarLogDatabase.getInstance(this)
         uploadRepo = UploadRepo(this, db)
@@ -98,6 +99,9 @@ class DiagnosticActivity : AppCompatActivity() {
                 delay(5000)
             }
         }
+
+        // 日志可滚动
+        tvLog.movementMethod = android.text.method.ScrollingMovementMethod()
     }
 
     private suspend fun handleObdToggle(tvObd: TextView, tvLog: TextView) {

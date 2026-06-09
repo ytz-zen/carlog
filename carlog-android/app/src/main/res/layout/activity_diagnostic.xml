@@ -100,9 +100,10 @@
                 android:textColor="#1e293b" android:layout_marginBottom="12dp" />
             <TextView android:id="@+id/diagLog" android:layout_width="match_parent"
                 android:layout_height="200dp" android:text="暂无日志"
-                android:textSize="10sp" android:textColor="#475569"
+                android:textSize="10sp" android:textColor="#94a3b8"
                 android:background="#1e293b" android:padding="8dp"
-                android:typeface="monospace" />
+                android:typeface="monospace"
+                android:scrollbars="vertical" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
