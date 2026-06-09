@@ -1,9 +1,11 @@
 FROM node:22-slim AS base
 WORKDIR /app
 
-# 国内镜像加速
+# 国内镜像加速 + 安装 OpenSSL（Prisma 需要）
 RUN npm config set registry https://registry.npmmirror.com && \
-    npm config set fetch-timeout 120000
+    npm config set fetch-timeout 120000 && \
+    apt-get update -y && apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 # 先装依赖，利用 docker layer 缓存
 COPY package.json ./

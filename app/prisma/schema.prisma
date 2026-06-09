@@ -27,7 +27,7 @@ model Car {
 model Tank {
   id           String      @id @default(uuid())
   carId        String
-  car          Car         @relation(fields: [carId], references: [id])
+  car          Car?        @relation(fields: [carId], references: [id])
   name         String      @default("主油箱")
   capacity     Float
   createdAt    DateTime    @default(now())
@@ -56,6 +56,7 @@ model Trip {
   tankId        String
   tank          Tank        @relation(fields: [tankId], references: [id])
   carId         String
+  car           Car         @relation(fields: [carId], references: [id])
 
   startTime     DateTime
   endTime       DateTime?
@@ -83,6 +84,7 @@ model FuelEvent {
   tankId      String
   tank        Tank     @relation(fields: [tankId], references: [id])
   carId       String
+  car         Car      @relation(fields: [carId], references: [id])
   tripId      String?
 
   timestamp   DateTime
@@ -165,7 +167,7 @@ model Reminder {
 model NotificationConfig {
   id          String   @id @default(uuid())
   webhookUrl  String
-  carId       String
+  carId       String   @unique
   car         Car      @relation(fields: [carId], references: [id])
 
   onTripEnd   Boolean  @default(true)
