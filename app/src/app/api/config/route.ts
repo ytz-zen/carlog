@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     tankCapacity: tank.capacity, tankName: tank.name,
     collectionInterval: 5, oilThreshold: 10,
-    carId: tank.car.id
+    carId: tank.car?.id || ''
   })
 }
 
