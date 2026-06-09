@@ -128,16 +128,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun checkTripStatus(tvStatus: TextView, tvInfo: TextView) {
+        val btnStart = findViewById<Button>(R.id.btnStart)
         val active = db.tripDao().getActiveTrip()
         if (active != null && active.endTime == null) {
+            btnStart.isEnabled = false
+            btnStart.alpha = 0.5f
             val elapsed = (System.currentTimeMillis() - active.startTime) / 1000
             val mins = elapsed / 60
             val secs = elapsed % 60
             tvStatus.text = "状态: 🚗 行驶中 (${mins}分${secs}秒)"
             tvInfo.text = "已记录 ${active.pointCount} 个GPS点"
-            // Also identify car if not done yet
             if (carId == null) identifyCar()
         } else {
+            btnStart.isEnabled = true
+            btnStart.alpha = 1f
             tvStatus.text = "状态: 🟢 等待行驶..."
             tvInfo.text = "行驶后自动记录"
         }
