@@ -25,6 +25,9 @@ export async function GET(request: NextRequest) {
     return { ...r, status, daysLeft, kmLeft, currentKm }
   })
   // Sort: overdue first, then soon, then ok
-  enriched.sort((a, b) => { const order = { overdue: 0, soon: 1, ok: 2 }; return order[a.status] - order[b.status] })
+  enriched.sort((a: any, b: any) => {
+    const order: Record<string, number> = { overdue: 0, soon: 1, ok: 2 }
+    return (order[a.status || 'ok'] ?? 99) - (order[b.status || 'ok'] ?? 99)
+  })
   return NextResponse.json(enriched)
 }
