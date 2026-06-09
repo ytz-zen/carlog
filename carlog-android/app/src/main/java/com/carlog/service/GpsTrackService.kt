@@ -248,6 +248,7 @@ class GpsTrackService : Service(), LocationListener {
     private suspend fun endCurrentTrip(endTime: Long) {
         val tripId = currentTripId ?: return
         currentTripId = null
+        manualMode = false
         tripDetector = TripDetector()
         pointCount = 0
         val points = db.tripDao().getGpsPoints(tripId)
