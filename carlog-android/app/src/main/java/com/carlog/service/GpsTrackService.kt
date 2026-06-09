@@ -276,6 +276,7 @@ class GpsTrackService : Service(), LocationListener {
                 tripDetector.reset()
             }
         }
+        return currentTripId
     }
 
     private suspend fun endCurrentTrip(endTime: Long) {
