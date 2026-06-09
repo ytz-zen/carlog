@@ -92,10 +92,11 @@ class DiagnosticActivity : AppCompatActivity() {
             scope.launch { handleObdToggle(tvObd, tvLog) }
         }
 
-        // 定时刷新日志（每5秒）
+        // 定时刷新日志和GPS（每5秒）
         scope.launch {
             while (isActive) {
                 refreshLog(tvLog)
+                refreshGps(tvGps)
                 delay(5000)
             }
         }
@@ -153,21 +154,34 @@ class DiagnosticActivity : AppCompatActivity() {
     }
 
     private fun refreshGps(tv: TextView) {
-        val lm = getSystemService(LOCATION_SERVICE) as? LocationManager
-        val gpsOn = lm?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true
-        val lastLoc = try { lm?.getLastKnownLocation(LocationManager.GPS_PROVIDER) } catch (e: Exception) { null }
+        val lm = getSystemService(LOCATION_SERVICE) as? LocationManager ?: return
+        val gpsOn = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        val hasPermission = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == 0
+
+        // 获取最近定位并检查时效性
+        val lastLoc = if (hasPermission) try { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) } catch (e: Exception) { null } else null
+        val isFresh = lastLoc != null && (System.currentTimeMillis() - lastLoc.time) < 60000  // 60秒内有效
+
         tv.text = buildString {
-            append(if (gpsOn) "✅ GPS: 已开启" else "❌ GPS: 未开启"); append('\n')
-            append("定位权限: "); append(if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == 0) "✅ 已授权" else "❌ 未授权"); append('\n')
-            if (lastLoc != null) {
+            append(if (gpsOn) "📡 GPS: 已开启" else "📡 GPS: 未开启"); append(" | ")
+            append(if (hasPermission) "权限: ✅" else "权限: ❌"); append('\n')
+            if (isFresh) {
                 append("纬度: %.5f".format(lastLoc.latitude)); append('\n')
                 append("经度: %.5f".format(lastLoc.longitude)); append('\n')
                 append("速度: %.1f km/h".format(lastLoc.speed * 3.6f)); append('\n')
                 append("精度: %.0f m".format(lastLoc.accuracy)); append('\n')
                 append("高度: %.0f m".format(lastLoc.altitude)); append('\n')
                 append("时间: ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.CHINA).format(java.util.Date(lastLoc.time))}")
+            } else if (gpsOn && hasPermission) {
+                append("⏳ 搜索GPS信号中...\n")
+                append("最后定位: ${lastLoc?.let {
+                    "%.5f, %.5f".format(it.latitude, it.longitude)
+                } ?: "无"}\n")
+                append("请到室外开阔处")
             } else {
-                append("⚠️ 暂无定位数据（车辆行驶后自动获取）")
+                append("⚠️ GPS 无信号")
+                if (!gpsOn) append("\n请开启位置信息")
+                if (!hasPermission) append("\n请授予定位权限")
             }
         }
     }
