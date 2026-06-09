@@ -106,6 +106,30 @@ class GpsTrackService : Service(), LocationListener {
         }
     }
 
+    /** 获取或创建本地车辆ID */
+    private suspend fun getOrCreateCarId(): String {
+        if (carId == null) {
+            carId = db.configDao().getString("car_id")
+            if (carId == null) {
+                carId = "local_car_${System.currentTimeMillis()}"
+                db.configDao().saveString("car_id", carId!!)
+            }
+        }
+        return carId!!
+    }
+
+    /** 获取或创建本地油箱ID */
+    private suspend fun getOrCreateTankId(): String {
+        if (tankId == null) {
+            tankId = db.configDao().getString("tank_id")
+            if (tankId == null) {
+                tankId = "local_tank_${System.currentTimeMillis()}"
+                db.configDao().saveString("tank_id", tankId!!)
+            }
+        }
+        return tankId!!
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> startTracking()
@@ -142,11 +166,10 @@ class GpsTrackService : Service(), LocationListener {
         // 手动点击"开始行驶"时立即创建行程
         serviceScope.launch {
             if (currentTripId == null) {
-                val carId2 = carId ?: return@launch
-                val tankId2 = tankId ?: return@launch
                 val trip = TripEntity(
                     id = "trip_${System.currentTimeMillis()}",
-                    tankId = tankId2, carId = carId2, startTime = System.currentTimeMillis()
+                    tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
+                    startTime = System.currentTimeMillis()
                 )
                 db.tripDao().insertTrip(trip)
                 currentTripId = trip.id
@@ -216,18 +239,15 @@ class GpsTrackService : Service(), LocationListener {
             // 自动检测：速度 > 5 立即开始行程
             tripDetector.onSpeedChange(speed)
             if (tripDetector.state == TripDetector.TripState.STARTED) {
-                carId?.let { cId ->
-                    tankId?.let { tId ->
-                        val trip = TripEntity(
-                            id = "trip_${System.currentTimeMillis()}",
-                            tankId = tId, carId = cId, startTime = timestamp
-                        )
-                        db.tripDao().insertTrip(trip)
-                        currentTripId = trip.id
-                        pointCount = 0
-                        return trip.id
-                    }
-                }
+                val trip = TripEntity(
+                    id = "trip_${System.currentTimeMillis()}",
+                    tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
+                    startTime = timestamp
+                )
+                db.tripDao().insertTrip(trip)
+                currentTripId = trip.id
+                pointCount = 0
+                return trip.id
             }
         } else {
             // 已有行程：检测是否该结束（停车超 5 分钟）
