@@ -31,6 +31,8 @@ model Tank {
   capacity     Float
   createdAt    DateTime    @default(now())
 
+  car          Car?
+
   trips        Trip[]
   fuelEvents   FuelEvent[]
 }
