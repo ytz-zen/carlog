@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     })
     tank = await prisma.tank.findFirst({ include: { car: true } })
   }
+  if (!tank) return NextResponse.json({ error: 'No tank' }, { status: 500 })
 
   return NextResponse.json({
     tankCapacity: tank.capacity, tankName: tank.name,
