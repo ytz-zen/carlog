@@ -180,32 +180,26 @@ class GpsTrackService : Service(), LocationListener {
 
     private suspend fun handleTripState(speed: Float, timestamp: Long): String? {
         if (currentTripId == null) {
-            if (speed > 5f) {
-                tripDetector = TripDetector()
-                tripDetector.onSpeedChange(speed)
-                if (tripDetector.state == TripDetector.TripState.STARTED) {
-                    carId?.let { cId ->
-                        tankId?.let { tId ->
-                            val trip = TripEntity(
-                                id = "trip_${System.currentTimeMillis()}",
-                                tankId = tId, carId = cId, startTime = timestamp
-                            )
-                            db.tripDao().insertTrip(trip)
-                            currentTripId = trip.id
-                            pointCount = 0
-                            return trip.id
-                        }
+            tripDetector.onSpeedChange(speed)
+            if (tripDetector.state == TripDetector.TripState.STARTED && !tripDetector.isJustStarted()) {
+                carId?.let { cId ->
+                    tankId?.let { tId ->
+                        val trip = TripEntity(
+                            id = "trip_${System.currentTimeMillis()}",
+                            tankId = tId, carId = cId, startTime = timestamp
+                        )
+                        db.tripDao().insertTrip(trip)
+                        currentTripId = trip.id
+                        pointCount = 0
+                        return trip.id
                     }
                 }
             }
         } else {
             tripDetector.onSpeedChange(speed)
-            if (tripDetector.state == TripDetector.TripState.IDLE) {
-                if (tripDetector.idleDuration >= 5 * 60 * 1000L) {
-                    endCurrentTrip(timestamp)
-                }
-            } else {
-                tripDetector.resetIdleTimer()
+            if (tripDetector.shouldEndTrip()) {
+                endCurrentTrip(timestamp)
+                tripDetector.reset()
             }
         }
         return currentTripId
