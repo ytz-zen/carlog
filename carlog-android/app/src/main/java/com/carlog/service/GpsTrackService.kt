@@ -197,10 +197,13 @@ class GpsTrackService : Service(), LocationListener {
 
     private fun stopTracking() {
         try { locationManager.removeUpdates(this) } catch (_: Exception) {}
+        log("停止追踪")
+        // 在协程里结束行程后 stopSelf
         serviceScope.launch {
             currentTripId?.let { endCurrentTrip(System.currentTimeMillis()) }
+            log("行程已结束, 停止服务")
+            withContext(Dispatchers.Main) { stopSelf() }
         }
-        stopSelf()
     }
 
     override fun onLocationChanged(location: Location) {
