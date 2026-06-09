@@ -28,6 +28,7 @@ class GpsTrackService : Service(), LocationListener {
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "carlog_location"
         const val ACTION_START = "com.carlog.START_TRACKING"
+        const val ACTION_FORCE_START = "com.carlog.FORCE_START"
         const val ACTION_STOP = "com.carlog.STOP_TRACKING"
     }
 
@@ -142,13 +143,17 @@ class GpsTrackService : Service(), LocationListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> startTracking()
+            ACTION_FORCE_START -> {
+                startTracking()
+                forceCreateTrip()
+            }
             ACTION_STOP -> stopTracking()
         }
         return START_NOT_STICKY
     }
 
     private fun startTracking() {
-        log("startTracking 被调用")
+        log("startTracking 被调用(自动模式)")
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         tripDetector = TripDetector()
         runBlocking {
@@ -157,40 +162,37 @@ class GpsTrackService : Service(), LocationListener {
             tankId = db.configDao().getString("tank_id")
         }
 
-        serviceScope.launch {
-            val existing = db.tripDao().getActiveTrip()
-            if (existing != null && existing.endTime == null) {
-                currentTripId = existing.id
-                pointCount = existing.pointCount
-            }
-        }
-
-        // 先创建行程（同步），再请求GPS
-        if (currentTripId == null) {
-            runBlocking {
-                val trip = TripEntity(
-                    id = "trip_${System.currentTimeMillis()}",
-                    tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
-                    startTime = System.currentTimeMillis()
-                )
-                db.tripDao().insertTrip(trip)
-                currentTripId = trip.id
-                pointCount = 0
-                log("行程已创建(同步): ${trip.id}")
-            }
-        }
-
         try {
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER, 5000L, 0f, this, Looper.getMainLooper()
             )
-            log("GPS定位已请求 (GPS_PROVIDER, 0米间距)")
+            log("GPS定位已请求")
         } catch (e: SecurityException) {
             log("GPS定位失败: 无权限 ${e.message}")
         } catch (e: Exception) {
             log("GPS定位失败: ${e.message}")
         }
-        updateNotification("追踪中...")
+        updateNotification("自动追踪中...")
+    }
+
+    /** 手动强制创建行程 */
+    private fun forceCreateTrip() {
+        runBlocking {
+            if (currentTripId != null) {
+                log("强制创建跳过: 已有行程 $currentTripId")
+                return@runBlocking
+            }
+            val trip = TripEntity(
+                id = "trip_${System.currentTimeMillis()}",
+                tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
+                startTime = System.currentTimeMillis()
+            )
+            db.tripDao().insertTrip(trip)
+            currentTripId = trip.id
+            pointCount = 0
+            log("强制创建行程: ${trip.id}")
+        }
+        updateNotification("手动追踪中")
     }
 
     private fun stopTracking() {

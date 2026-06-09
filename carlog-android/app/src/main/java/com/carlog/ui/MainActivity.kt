@@ -54,21 +54,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Initial check + auto-start tracking
+        // 自动启动追踪（仅监听GPS，不创建行程）
         scope.launch {
             checkServer(tvServer)
             checkGps(tvGps)
-            // Auto-start tracking service
             startForegroundService(Intent(this@MainActivity, GpsTrackService::class.java).apply {
-                action = GpsTrackService.ACTION_START
+                action = "com.carlog.START_TRACKING"
             })
         }
 
+        // 手动启动追踪
         btnStart.setOnClickListener {
             startForegroundService(Intent(this, GpsTrackService::class.java).apply {
-                action = GpsTrackService.ACTION_START
+                action = "com.carlog.FORCE_START"
             })
-            tvTrip.text = "状态: ⏳ 启动中..."
+            tvTrip.text = "状态: 🚗 手动开始"
             tvInfo.text = "手动启动追踪"
         }
 

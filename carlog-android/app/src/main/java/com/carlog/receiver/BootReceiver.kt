@@ -8,7 +8,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             context.startForegroundService(Intent(context, GpsTrackService::class.java).apply {
-                action = GpsTrackService.ACTION_START
+                action = "com.carlog.START_TRACKING"
             })
         }
     }
