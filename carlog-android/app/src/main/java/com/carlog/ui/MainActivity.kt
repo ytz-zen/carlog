@@ -77,6 +77,10 @@ class MainActivity : AppCompatActivity() {
         btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+
+        findViewById<Button>(R.id.btnDiagnostic).setOnClickListener {
+            startActivity(Intent(this, DiagnosticActivity::class.java))
+        }
     }
 
     private suspend fun checkServer(tv: TextView) {
