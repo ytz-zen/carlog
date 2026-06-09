@@ -234,7 +234,6 @@ class DiagnosticActivity : AppCompatActivity() {
                 // 提示开机自启
                 tv.append("\n\n📌 如需开机自动追踪，请在系统设置中允许")
                 tv.append("\n    APP自启动权限（不同机型名称不同）")
-                }
             }
         }
     }
