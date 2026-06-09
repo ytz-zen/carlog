@@ -8,8 +8,10 @@ export async function GET(request: NextRequest) {
 
   let tank = await prisma.tank.findFirst({ include: { car: true } })
   if (!tank) {
-    const car = await prisma.car.create({ data: { name: '我的车' } })
-    tank = await prisma.tank.create({ data: { carId: car.id, name: '主油箱', capacity: 60 } })
+    const car = await prisma.car.create({
+      data: { name: '我的车', tank: { create: { name: '主油箱', capacity: 60 } } }
+    })
+    tank = await prisma.tank.findFirst({ include: { car: true } })
   }
 
   return NextResponse.json({

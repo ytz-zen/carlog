@@ -53,10 +53,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Trip already active', tripId: existing.id }, { status: 409 })
     }
     let car = await prisma.car.findFirst()
-    if (!car) car = await prisma.car.create({ data: { name: '我的车' } })
-    let tank = await prisma.tank.findFirst({ where: { carId: car.id } })
+    if (!car) car = await prisma.car.create({ 
+      data: { name: '我的车', tank: { create: { name: '主油箱', capacity: 60 } } }
+    })
+    let tank = await prisma.tank.findFirst({ include: { car: true } })
     if (!tank) {
-      tank = await prisma.tank.create({ data: { carId: car.id, name: '主油箱', capacity: 60 } })
+      tank = await prisma.tank.create({ data: { name: '主油箱', capacity: 60 } })
+      car = await prisma.car.update({ where: { id: car.id }, data: { tankId: tank.id } })
     }
     const trip = await prisma.trip.create({
       data: { carId: car.id, tankId: tank.id, startTime: new Date(), endTime: null, pointCount: 0 }
