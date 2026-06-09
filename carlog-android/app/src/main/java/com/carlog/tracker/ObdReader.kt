@@ -23,6 +23,13 @@ class ObdReader {
     private var input: InputStream? = null
     private var output: OutputStream? = null
 
+    /** 列出所有已配对的蓝牙设备 */
+    fun listBondedDevices(): List<BluetoothDevice> {
+        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return emptyList()
+        if (!adapter.isEnabled) return emptyList()
+        return adapter.bondedDevices.toList()
+    }
+
     /** 搜索已配对的 ELM327 OBD 设备 */
     fun findObdDevice(): BluetoothDevice? {
         val adapter = BluetoothAdapter.getDefaultAdapter() ?: return null

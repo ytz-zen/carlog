@@ -114,6 +114,12 @@ class DiagnosticActivity : AppCompatActivity() {
             btn.text = "连接中..."; addLog(tvLog, "🔌 正在搜索 OBD 设备...")
             withContext(Dispatchers.IO) {
                 val reader = ObdReader()
+                // 列出所有蓝牙设备
+                val devices = reader.listBondedDevices()
+                addLog(tvLog, "🔍 已配对蓝牙设备: ${devices.size}个")
+                for (d in devices) {
+                    addLog(tvLog, "  ${d.name} (${d.address})")
+                }
                 val device = reader.findObdDevice()
                 if (device != null) {
                     addLog(tvLog, "🔌 找到设备: ${device.name}")
@@ -128,6 +134,29 @@ class DiagnosticActivity : AppCompatActivity() {
                         }
                     } else {
                         withContext(Dispatchers.Main) { btn.text = "连接 OBD"; tvObd.text = "❌ $err"; addLog(tvLog, "❌ OBD 连接失败: $err") }
+                    }
+                } else if (devices.isNotEmpty()) {
+                    // 自动查找没找到，尝试逐个连接
+                    addLog(tvLog, "⚠️ 未识别到OBD设备，逐个尝试连接...")
+                    for (d in devices) {
+                        addLog(tvLog, "尝试连接: ${d.name}")
+                        val err = reader.connect(d)
+                        if (err == null) {
+                            obdReader = reader; obdConnected = true
+                            val data = reader.readData()
+                            withContext(Dispatchers.Main) {
+                                updateObdDisplay(tvObd, data)
+                                btn.text = "断开 OBD"
+                                addLog(tvLog, "✅ OBD 连接成功 (${d.name})")
+                            }
+                            return@withContext
+                        }
+                        addLog(tvLog, "  ${d.name} 连接失败: $err")
+                    }
+                    withContext(Dispatchers.Main) {
+                        btn.text = "连接 OBD"
+                        tvObd.text = "⚠️ 所有设备连接失败\n车机自带OBD应用可能占用了连接"
+                        addLog(tvLog, "❌ 所有设备连接失败")
                     }
                 } else {
                     withContext(Dispatchers.Main) { btn.text = "连接 OBD"; tvObd.text = "⚠️ 未找到已配对的 OBD 设备\n请先在系统蓝牙设置中配对"; addLog(tvLog, "⚠️ 未找到已配对的 OBD 设备") }
