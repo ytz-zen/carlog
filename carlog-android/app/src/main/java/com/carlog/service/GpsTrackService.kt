@@ -43,6 +43,11 @@ class GpsTrackService : Service(), LocationListener {
     private var tankCapacity: Float = 60f
     private var pointCount = 0
     private var lastFuelLevel: Float? = null
+    private val serviceStartTime = System.currentTimeMillis()
+
+    private fun log(msg: String) {
+        android.util.Log.d("CarLog", "[SVC] $msg")
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -55,31 +60,35 @@ class GpsTrackService : Service(), LocationListener {
         serviceScope.launch { recoverPendingTrips() }
     }
 
-    /** Find un-ended trips from previous sudden power loss and upload them */
+    /** 恢复上次断电未结束的行程 */
     private suspend fun recoverPendingTrips() {
-        // First identify the car
+        log("开始恢复检查")
         identifyCar()
         
         val active = db.tripDao().getActiveTrip()
         if (active != null && active.endTime == null) {
-            val now = System.currentTimeMillis()
-            val points = db.tripDao().getGpsPoints(active.id)
-            var distance = 0f; var maxSpeed = 0f; var totalSpeed = 0f; var speedCount = 0
-            for (i in 1 until points.size) {
-                distance += haversine(points[i-1].latitude, points[i-1].longitude,
-                    points[i].latitude, points[i].longitude)
-                if (points[i].speed > maxSpeed) maxSpeed = points[i].speed
-                if (points[i].speed > 5f) { totalSpeed += points[i].speed; speedCount++ }
+            // 跳过本轮启动后才创建的行程（避免跟 startTracking 竞争）
+            if (active.startTime > serviceStartTime - 5000) {
+                log("跳过最近创建的行程: ${active.id}")
+            } else {
+                log("发现未结束行程: ${active.id}, 开始时间=${active.startTime}")
+                val now = System.currentTimeMillis()
+                val points = db.tripDao().getGpsPoints(active.id)
+                var distance = 0f; var maxSpeed = 0f; var totalSpeed = 0f; var speedCount = 0
+                for (i in 1 until points.size) {
+                    distance += haversine(points[i-1].latitude, points[i-1].longitude,
+                        points[i].latitude, points[i].longitude)
+                    if (points[i].speed > maxSpeed) maxSpeed = points[i].speed
+                    if (points[i].speed > 5f) { totalSpeed += points[i].speed; speedCount++ }
+                }
+                distance = round(distance * 10) / 10
+                val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
+                val duration = ((now - active.startTime) / 1000).toInt()
+                log("恢复行程: 里程=${distance}km, 时长=${duration}s")
+                db.tripDao().updateUploadState(active.id, "IDLE")
+                uploadRepo.uploadTrip(active.id, now, distance, avgSpeed, maxSpeed, duration)
+                log("恢复行程完成: ${active.id}")
             }
-            distance = round(distance * 10) / 10
-            val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
-            val duration = ((now - active.startTime) / 1000).toInt()
-
-            // End the trip in DB
-            db.tripDao().updateUploadState(active.id, "IDLE")
-
-            // Upload
-            uploadRepo.uploadTrip(active.id, now, distance, avgSpeed, maxSpeed, duration)
         }
 
         // Upload any pending GPS points from previous trips
@@ -139,6 +148,7 @@ class GpsTrackService : Service(), LocationListener {
     }
 
     private fun startTracking() {
+        log("startTracking 被调用")
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         tripDetector = TripDetector()  // 初始化行程检测器
         runBlocking {
@@ -163,9 +173,12 @@ class GpsTrackService : Service(), LocationListener {
 
         updateNotification("追踪中...")
 
+        log("GPS定位已请求")
+
         // 手动点击"开始行驶"时立即创建行程
         serviceScope.launch {
             if (currentTripId == null) {
+                log("手动模式: 创建新行程")
                 val trip = TripEntity(
                     id = "trip_${System.currentTimeMillis()}",
                     tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
@@ -175,6 +188,9 @@ class GpsTrackService : Service(), LocationListener {
                 currentTripId = trip.id
                 pointCount = 0
                 updateNotification("手动追踪中")
+                log("手动行程已创建: ${trip.id}")
+            } else {
+                log("手动模式跳过: 已有行程 $currentTripId")
             }
         }
     }
@@ -190,6 +206,7 @@ class GpsTrackService : Service(), LocationListener {
     override fun onLocationChanged(location: Location) {
         val speedKmh = location.speed * 3.6f
         val currentFuel = readFuelLevel()
+        log("GPS定位: speed=${Math.round(speedKmh)}km/h, lat=${location.latitude}, lng=${location.longitude}")
 
         serviceScope.launch {
             val tripId = handleTripState(speedKmh, location.time)
@@ -236,9 +253,10 @@ class GpsTrackService : Service(), LocationListener {
 
     private suspend fun handleTripState(speed: Float, timestamp: Long): String? {
         if (currentTripId == null) {
-            // 自动检测：速度 > 5 立即开始行程
+            // 自动检测
             tripDetector.onSpeedChange(speed)
             if (tripDetector.state == TripDetector.TripState.STARTED) {
+                log("自动检测: 速度>5, 创建行程")
                 val trip = TripEntity(
                     id = "trip_${System.currentTimeMillis()}",
                     tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
@@ -250,18 +268,19 @@ class GpsTrackService : Service(), LocationListener {
                 return trip.id
             }
         } else {
-            // 已有行程：检测是否该结束（停车超 5 分钟）
+            // 已有行程：检测是否该结束
             tripDetector.onSpeedChange(speed)
             if (tripDetector.shouldEndTrip()) {
+                log("停车超5分钟, 结束行程: $currentTripId")
                 endCurrentTrip(timestamp)
                 tripDetector.reset()
             }
         }
-        return currentTripId
     }
 
     private suspend fun endCurrentTrip(endTime: Long) {
         val tripId = currentTripId ?: return
+        log("结束行程: $tripId")
         currentTripId = null
         tripDetector = TripDetector()
         pointCount = 0
@@ -324,6 +343,7 @@ class GpsTrackService : Service(), LocationListener {
 
     override fun onBind(intent: Intent?) = null
     override fun onDestroy() {
+        log("onDestroy 服务销毁")
         super.onDestroy(); serviceScope.cancel(); try { locationManager.removeUpdates(this) } catch (_: Exception) {}
     }
 }
