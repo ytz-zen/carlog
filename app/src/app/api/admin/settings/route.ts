@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { checkCookieAuth } from '@/lib/auth'
 
-const SETTINGS_KEYS = ['tianditu_key', 'webhook_url', 'dashboard_password'] as const
+const SETTINGS_KEYS = ['tianditu_key', 'webhook_url', 'dashboard_password', 'push_trip_start', 'push_trip_end'] as const
 
 export async function GET() {
   const rows = await prisma.systemConfig.findMany({

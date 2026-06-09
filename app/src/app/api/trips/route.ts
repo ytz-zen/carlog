@@ -64,6 +64,15 @@ export async function POST(request: NextRequest) {
     const trip = await prisma.trip.create({
       data: { carId: car.id, tankId: tank.id, startTime: new Date(), endTime: null, pointCount: 0 }
     })
+    // Push trip start notification
+    try {
+      const sysConfig = await prisma.systemConfig.findUnique({ where: { key: 'webhook_url' } })
+      const pushEnabled = await prisma.systemConfig.findUnique({ where: { key: 'push_trip_start' } })
+      if (sysConfig?.value && pushEnabled?.value !== 'false') {
+        const msg = `🚗 行程开始 [${new Date().toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })}]\n车辆: ${car.name}\n已开始记录行驶轨迹`
+        await sendWebhook(sysConfig.value, msg)
+      }
+    } catch (_) {}
     return NextResponse.json({ tripId: trip.id, state: 'STARTING', carId: car.id, tankId: tank.id })
   }
 
@@ -114,16 +123,20 @@ export async function POST(request: NextRequest) {
       await prisma.trip.update({ where: { id: tripId }, data: { fuelConsumed, fuelPer100km } })
     }
 
-    // Trigger notification
-    const config = await prisma.notificationConfig.findFirst({ where: { carId: trip.carId, onTripEnd: true } })
-    if (config) {
-      const msg = formatTripMessage({
-        startTime: trip.startTime, endTime: updated.endTime, duration: updated.duration,
-        distance: updated.distance, avgSpeed: updated.avgSpeed, maxSpeed: updated.maxSpeed,
-        fuelConsumed: fuelConsumed, fuelPer100km: fuelPer100km
-      })
-      await sendWebhook(config.webhookUrl, msg).catch(() => {})
-    }
+    // Trigger notification (via system settings)
+    try {
+      const webhookUrl = await prisma.systemConfig.findUnique({ where: { key: 'webhook_url' } })
+      const pushEnabled = await prisma.systemConfig.findUnique({ where: { key: 'push_trip_end' } })
+      if (webhookUrl?.value && pushEnabled?.value !== 'false') {
+        const car = await prisma.car.findUnique({ where: { id: trip.carId }, select: { name: true } })
+        const msg = formatTripMessage({
+          startTime: trip.startTime, endTime: updated.endTime, duration: updated.duration,
+          distance: updated.distance, avgSpeed: updated.avgSpeed, maxSpeed: updated.maxSpeed,
+          fuelConsumed: fuelConsumed, fuelPer100km: fuelPer100km
+        })
+        await sendWebhook(webhookUrl.value, `${msg}\n车辆: ${car?.name || '未知'}`).catch(() => {})
+      }
+    } catch (_) {}
 
     return NextResponse.json({
       tripId, distance: updated.distance, duration: updated.duration,
