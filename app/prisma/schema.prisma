@@ -15,7 +15,8 @@ model Car {
   calibrationFactor Float          @default(1.0)
   createdAt       DateTime         @default(now())
 
-  tank            Tank
+  tank            Tank             @relation(fields: [tankId], references: [id])
+  tankId          String           @unique
   trips           Trip[]
   fuelEvents      FuelEvent[]
   notifConfig     NotificationConfig?
@@ -26,8 +27,6 @@ model Car {
 
 model Tank {
   id           String      @id @default(uuid())
-  carId        String
-  car          Car?        @relation(fields: [carId], references: [id])
   name         String      @default("主油箱")
   capacity     Float
   createdAt    DateTime    @default(now())
