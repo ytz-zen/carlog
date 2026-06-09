@@ -25,6 +25,7 @@ services:
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-carlog_admin_2026}
       JWT_SECRET: ${JWT_SECRET:-}
       NEXT_PUBLIC_API_URL: http://localhost:3012
+      NEXT_PUBLIC_TIANDITU_KEY: ${TIANDITU_KEY:-}
       NODE_ENV: production
     depends_on:
       db:

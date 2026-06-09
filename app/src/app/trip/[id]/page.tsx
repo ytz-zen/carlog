@@ -55,14 +55,15 @@ export default function TripDetailPage() {
       [trip.points[0].lat, trip.points[0].lng], 14
     )
 
-    // Tianditu tile layer (free, no API key needed for basic use)
-    L.tileLayer('https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=', {
+    // Tianditu tile layer
+    const tk = process.env.NEXT_PUBLIC_TIANDITU_KEY || ''
+    L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${tk}`, {
       subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
       maxZoom: 18,
       attribution: '© 天地图',
     }).addTo(map)
     // Add label overlay
-    L.tileLayer('https://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=', {
+    L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${tk}`, {
       subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
       maxZoom: 18,
     }).addTo(map)
