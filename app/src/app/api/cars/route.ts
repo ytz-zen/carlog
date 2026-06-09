@@ -4,7 +4,7 @@ import { checkCookieAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key')
-  if (!apiKey || apiKey !== (process.env.API_KEY || 'carlog_dev_key_2026'))
+  if (!apiKey || apiKey !== (await getApiKey()))
     if (!await checkCookieAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   
   const cars = await prisma.car.findMany({

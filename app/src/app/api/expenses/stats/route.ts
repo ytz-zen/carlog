@@ -4,7 +4,7 @@ import { checkApiKey } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const key = request.headers.get('X-API-Key')
-  if (!key || key !== (process.env.API_KEY || 'carlog_dev_key_2026'))
+  if (!key || key !== (await getApiKey()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)

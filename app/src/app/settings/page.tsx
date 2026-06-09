@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const save = async () => {
     setSaving(true)
     const body: Record<string, string> = {}
-    for (const key of ['tianditu_key', 'webhook_url', 'dashboard_password']) {
+    for (const key of ['tianditu_key', 'webhook_url', 'dashboard_password', 'push_trip_start', 'push_trip_end', 'api_key']) {
       const el = document.getElementById(key) as HTMLInputElement
       if (el?.value) body[key] = el.value
     }
@@ -52,6 +52,12 @@ export default function SettingsPage() {
             <input id="webhook_url" key={`wh-${settings.webhook_url}`} defaultValue={settings.webhook_url || ''}
               className="input" placeholder="群机器人 Webhook 地址" />
             <p className="text-xs text-slate-400 mt-1">用于推送行程开始/结束提醒</p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 block mb-1.5">🔑 Android API Key</label>
+            <input id="api_key" key={`ak-${settings.api_key}`} defaultValue={settings.api_key || ''}
+              className="input font-mono" placeholder="Android 端连接用密钥" />
+            <p className="text-xs text-slate-400 mt-1">修改后 Android 端设置中也要同步修改</p>
           </div>
           <div className="border-t border-slate-100 pt-4">
             <h3 className="text-sm font-medium text-slate-700 mb-3">🔔 推送开关</h3>

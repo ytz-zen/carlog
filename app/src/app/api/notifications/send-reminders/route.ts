@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getApiKey } from '@/lib/auth'
 import { sendWebhook, formatReminderDigest } from '@/lib/notifications'
 
 export async function POST(request: NextRequest) {
   const key = request.headers.get('X-API-Key')
-  if (!key || key !== (process.env.API_KEY || 'carlog_dev_key_2026'))
+  if (!key || key !== (await getApiKey()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const notifConfig = await prisma.notificationConfig.findFirst()

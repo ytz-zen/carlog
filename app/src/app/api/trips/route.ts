@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getApiKey } from '@/lib/auth'
 import { sendWebhook, formatTripMessage, formatDailyDigest } from '@/lib/notifications'
 
 export async function GET(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key') || ''
-  const validKey = process.env.API_KEY || 'carlog_secret_key'
+  const validKey = await getApiKey()
   if (apiKey !== validKey) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

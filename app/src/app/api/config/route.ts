@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getApiKey } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key') || ''
-  const validKey = process.env.API_KEY || 'carlog_secret_key'
+  const validKey = await getApiKey()
   if (apiKey !== validKey) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let tank = await prisma.tank.findFirst({ include: { car: true } })
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key') || ''
-  const validKey = process.env.API_KEY || 'carlog_secret_key'
+  const validKey = await getApiKey()
   if (apiKey !== validKey) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()

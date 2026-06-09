@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getApiKey } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   const key = request.headers.get('X-API-Key')
-  if (!key || key !== (process.env.API_KEY || 'carlog_dev_key_2026')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!key || key !== (await getApiKey())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const now = new Date()
   // Get current odometer from car
   const car = await prisma.car.findFirst({ include: { odometerEntries: { orderBy: { timestamp: 'desc' }, take: 1 } } })

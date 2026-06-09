@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getApiKey } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key')
-  if (!apiKey || apiKey !== (process.env.API_KEY || 'carlog_dev_key_2026'))
+  if (!apiKey || apiKey !== (await getApiKey()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   
   const { carName } = await request.json()
