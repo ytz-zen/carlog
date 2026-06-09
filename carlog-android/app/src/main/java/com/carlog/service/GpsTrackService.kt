@@ -150,7 +150,7 @@ class GpsTrackService : Service(), LocationListener {
     private fun startTracking() {
         log("startTracking 被调用")
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        tripDetector = TripDetector()  // 初始化行程检测器
+        tripDetector = TripDetector()
         runBlocking {
             tankCapacity = db.configDao().getString("tank_capacity")?.toFloatOrNull() ?: 60f
             carId = db.configDao().getString("car_id")
@@ -165,20 +165,9 @@ class GpsTrackService : Service(), LocationListener {
             }
         }
 
-        try {
-            locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER, 5000L, 5f, this
-            )
-        } catch (e: SecurityException) {}
-
-        updateNotification("追踪中...")
-
-        log("GPS定位已请求")
-
-        // 手动点击"开始行驶"时立即创建行程
-        serviceScope.launch {
-            if (currentTripId == null) {
-                log("手动模式: 创建新行程")
+        // 先创建行程（同步），再请求GPS
+        if (currentTripId == null) {
+            runBlocking {
                 val trip = TripEntity(
                     id = "trip_${System.currentTimeMillis()}",
                     tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
@@ -187,12 +176,21 @@ class GpsTrackService : Service(), LocationListener {
                 db.tripDao().insertTrip(trip)
                 currentTripId = trip.id
                 pointCount = 0
-                updateNotification("手动追踪中")
-                log("手动行程已创建: ${trip.id}")
-            } else {
-                log("手动模式跳过: 已有行程 $currentTripId")
+                log("行程已创建(同步): ${trip.id}")
             }
         }
+
+        try {
+            locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER, 5000L, 0f, this, Looper.getMainLooper()
+            )
+            log("GPS定位已请求 (GPS_PROVIDER, 0米间距)")
+        } catch (e: SecurityException) {
+            log("GPS定位失败: 无权限 ${e.message}")
+        } catch (e: Exception) {
+            log("GPS定位失败: ${e.message}")
+        }
+        updateNotification("追踪中...")
     }
 
     private fun stopTracking() {
