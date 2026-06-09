@@ -5,12 +5,15 @@ import { checkCookieAuth } from '@/lib/auth'
 const SETTINGS_KEYS = ['tianditu_key', 'webhook_url', 'dashboard_password', 'push_trip_start', 'push_trip_end'] as const
 
 export async function GET() {
-  const rows = await prisma.systemConfig.findMany({
-    where: { key: { in: SETTINGS_KEYS as unknown as string[] } }
-  })
-  const result: Record<string, string> = {}
-  for (const r of rows) result[r.key] = r.value
-  return NextResponse.json(result)
+  try {
+    const rows = await prisma.systemConfig.findMany()
+    const result: Record<string, string> = {}
+    for (const r of rows) result[r.key] = r.value
+    return NextResponse.json(result)
+  } catch {
+    // Table might not exist yet
+    return NextResponse.json({})
+  }
 }
 
 export async function PUT(request: NextRequest) {
