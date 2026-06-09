@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const tank = await prisma.tank.findFirst()
     if (!tank) return NextResponse.json({ error: 'No car configured' }, { status: 404 })
     let car = await prisma.car.findFirst()
-    if (!car) car = await prisma.car.create({ data: { name: '我的车' } })
+    if (!car) car = await prisma.car.create({ data: { name: '我的车', tank: { create: { name: '主油箱', capacity: 60 } } } })
     const fuelAdded = Math.round(tank.capacity * (fuelAfter - fuelBefore) / 1000) / 10
     const ts = timestamp ? new Date(timestamp) : new Date()
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const tank = await prisma.tank.findFirst()
     if (!tank) return NextResponse.json({ error: 'No car configured' }, { status: 404 })
     let car = await prisma.car.findFirst()
-    if (!car) car = await prisma.car.create({ data: { name: '我的车' } })
+    if (!car) car = await prisma.car.create({ data: { name: '我的车', tank: { create: { name: '主油箱', capacity: 60 } } } })
     const event = await prisma.fuelEvent.create({
       data: { carId: car.id, tankId: tank.id, timestamp: new Date(), fuelBefore, fuelAfter,
               fuelAdded: fuelAdded || Math.round(tank.capacity * (fuelAfter - fuelBefore) / 1000) / 10,

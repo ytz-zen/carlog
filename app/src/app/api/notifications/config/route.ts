@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   let car = await prisma.car.findFirst()
-  if (!car) car = await prisma.car.create({ data: { name: '我的车' } })
+  if (!car) car = await prisma.car.create({ data: { name: '我的车', tank: { create: { name: '主油箱', capacity: 60 } } } })
 
   const config = await prisma.notificationConfig.upsert({
     where: { carId: car.id },
