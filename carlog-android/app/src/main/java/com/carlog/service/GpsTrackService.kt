@@ -138,6 +138,22 @@ class GpsTrackService : Service(), LocationListener {
         } catch (e: SecurityException) {}
 
         updateNotification("追踪中...")
+
+        // 手动点击"开始行驶"时立即创建行程
+        serviceScope.launch {
+            if (currentTripId == null) {
+                val carId2 = carId ?: return@launch
+                val tankId2 = tankId ?: return@launch
+                val trip = TripEntity(
+                    id = "trip_${System.currentTimeMillis()}",
+                    tankId = tankId2, carId = carId2, startTime = System.currentTimeMillis()
+                )
+                db.tripDao().insertTrip(trip)
+                currentTripId = trip.id
+                pointCount = 0
+                updateNotification("行程已开始")
+            }
+        }
     }
 
     private fun stopTracking() {
@@ -198,7 +214,7 @@ class GpsTrackService : Service(), LocationListener {
     private suspend fun handleTripState(speed: Float, timestamp: Long): String? {
         if (currentTripId == null) {
             tripDetector.onSpeedChange(speed)
-            if (tripDetector.state == TripDetector.TripState.STARTED && !tripDetector.isJustStarted()) {
+            if (tripDetector.state == TripDetector.TripState.STARTED) {
                 carId?.let { cId ->
                     tankId?.let { tId ->
                         val trip = TripEntity(
