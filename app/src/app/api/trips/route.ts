@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     })
     let tank = await prisma.tank.findFirst({ include: { car: true } })
     if (!tank) {
-      tank = await prisma.tank.create({ data: { name: '主油箱', capacity: 60 } })
+      tank = await prisma.tank.create({ data: { name: '主油箱', capacity: 60 }, include: { car: true } })
       car = await prisma.car.update({ where: { id: car.id }, data: { tankId: tank.id } })
     }
     const trip = await prisma.trip.create({
