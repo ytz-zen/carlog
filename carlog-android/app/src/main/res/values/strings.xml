@@ -6,9 +6,9 @@
     <string name="carlog_btn_settings">设置</string>
     <string name="carlog_settings_title">车行记设置</string>
     <string name="carlog_label_server">服务器地址</string>
-    <string name="carlog_hint_server">http://192.168.5.193:3000</string>
+    <string name="carlog_hint_server">http://192.168.5.193:3012</string>
     <string name="carlog_label_apikey">API Key</string>
-    <string name="carlog_hint_apikey">从服务器注册页面获取</string>
+    <string name="carlog_hint_apikey">从服务器配置页面获取</string>
     <string name="carlog_label_tank">油箱容量(升)</string>
     <string name="carlog_hint_tank">60</string>
     <string name="carlog_btn_save">保存</string>

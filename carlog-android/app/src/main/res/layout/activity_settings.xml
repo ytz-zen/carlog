@@ -8,21 +8,26 @@
             android:text="@string/carlog_settings_title" android:textSize="24sp" android:textStyle="bold" android:layout_marginBottom="24dp" />
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="@string/carlog_label_server" android:textSize="14sp" android:layout_marginTop="8dp" />
+            android:text="车辆名称" android:textSize="14sp" android:layout_marginTop="8dp" />
+        <EditText android:id="@+id/etCarName" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="如: 我的小黑" android:inputType="text" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="服务器地址" android:textSize="14sp" android:layout_marginTop="8dp" />
         <EditText android:id="@+id/etServerUrl" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="@string/carlog_hint_server" android:inputType="textUri" />
+            android:hint="http://192.168.5.193:3012" android:inputType="textUri" />
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="@string/carlog_label_apikey" android:textSize="14sp" android:layout_marginTop="16dp" />
+            android:text="API Key" android:textSize="14sp" android:layout_marginTop="16dp" />
         <EditText android:id="@+id/etApiKey" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="@string/carlog_hint_apikey" android:inputType="textPassword" />
+            android:hint="从服务器配置页面获取" android:inputType="textPassword" />
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="@string/carlog_label_tank" android:textSize="14sp" android:layout_marginTop="16dp" />
+            android:text="油箱容量(升)" android:textSize="14sp" android:layout_marginTop="16dp" />
         <EditText android:id="@+id/etTankCapacity" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:hint="@string/carlog_hint_tank" android:inputType="numberDecimal" />
+            android:hint="60" android:inputType="numberDecimal" />
 
         <Button android:id="@+id/btnSave" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/carlog_btn_save" android:layout_marginTop="24dp" android:padding="16dp" />
+            android:text="保存" android:layout_marginTop="24dp" android:padding="16dp" />
     </LinearLayout>
 </ScrollView>

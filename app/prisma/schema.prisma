@@ -13,6 +13,8 @@ model Car {
   vin             String?
   initialOdometer Float?
   calibrationFactor Float          @default(1.0)
+  lastSeenAt      DateTime?                // 最后在线时间
+  isOnline        Boolean          @default(false)
   createdAt       DateTime         @default(now())
 
   tank            Tank             @relation(fields: [tankId], references: [id])
@@ -163,6 +165,12 @@ model Reminder {
   updatedAt    DateTime  @updatedAt
 
   @@index([carId, nextDate])
+}
+
+model SystemConfig {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
 }
 
 model NotificationConfig {

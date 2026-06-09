@@ -16,12 +16,14 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
         db = CarLogDatabase.getInstance(this)
 
+        val etCarName = findViewById<EditText>(R.id.etCarName)
         val etServer = findViewById<EditText>(R.id.etServerUrl)
         val etKey = findViewById<EditText>(R.id.etApiKey)
         val etTank = findViewById<EditText>(R.id.etTankCapacity)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
         scope.launch {
+            db.configDao().getString("car_name")?.let { etCarName.setText(it) }
             db.configDao().getString("server_url")?.let { etServer.setText(it) }
             db.configDao().getString("api_key")?.let { etKey.setText(it) }
             db.configDao().getString("tank_capacity")?.let { etTank.setText(it) }
@@ -29,9 +31,11 @@ class SettingsActivity : AppCompatActivity() {
 
         btnSave.setOnClickListener {
             scope.launch {
+                val name = etCarName.text.toString().trim()
                 val server = etServer.text.toString().trim()
                 val key = etKey.text.toString().trim()
                 val tank = etTank.text.toString().trim().ifEmpty { "60" }
+                if (name.isNotEmpty()) db.configDao().saveString("car_name", name)
                 if (server.isNotEmpty()) db.configDao().saveString("server_url", server)
                 if (key.isNotEmpty()) db.configDao().saveString("api_key", key)
                 db.configDao().saveString("tank_capacity", tank)

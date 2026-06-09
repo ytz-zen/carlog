@@ -56,6 +56,9 @@ class GpsTrackService : Service(), LocationListener {
 
     /** Find un-ended trips from previous sudden power loss and upload them */
     private suspend fun recoverPendingTrips() {
+        // First identify the car
+        identifyCar()
+        
         val active = db.tripDao().getActiveTrip()
         if (active != null && active.endTime == null) {
             val now = System.currentTimeMillis()
@@ -87,6 +90,18 @@ class GpsTrackService : Service(), LocationListener {
                     if (remaining > 0) uploadRepo.uploadPendingPoints(t.id)
                 }
             }
+        }
+    }
+
+    /** Identify this car on the server (create or find by name) */
+    private suspend fun identifyCar() {
+        val carName = db.configDao().getString("car_name") ?: return
+        val result = uploadRepo.identifyCar(carName)
+        if (result != null) {
+            carId = result.carId
+            tankId = result.tankId
+            db.configDao().saveString("car_id", result.carId)
+            db.configDao().saveString("tank_id", result.tankId)
         }
     }
 

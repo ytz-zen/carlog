@@ -110,4 +110,24 @@ class UploadRepo(
             }
         } catch (e: IOException) { null }
     }
+
+    suspend fun identifyCar(carName: String): CarIdentifyResult? {
+        val apiKey = getApiKey() ?: return null
+        val baseUrl = getBaseUrl()
+        val body = gson.toJson(mapOf("carName" to carName))
+        val request = Request.Builder()
+            .url("$baseUrl/api/cars/identify")
+            .header(HEADER_API_KEY, apiKey)
+            .post(body.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+        return try {
+            client.newCall(request).execute().use {
+                if (it.isSuccessful) {
+                    gson.fromJson(it.body?.string(), CarIdentifyResult::class.java)
+                } else null
+            }
+        } catch (e: IOException) { null }
+    }
 }
+
+data class CarIdentifyResult(val carId: String, val tankId: String, val name: String)
