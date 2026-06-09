@@ -86,6 +86,7 @@ class DiagnosticActivity : AppCompatActivity() {
         }
 
         // OBD Connect
+        val tvObd = findViewById<TextView>(R.id.diagObdInfo)
         findViewById<Button>(R.id.btnObdConnect).setOnClickListener {
             scope.launch { handleObdToggle(tvObd, tvLog) }
         }
