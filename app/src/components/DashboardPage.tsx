@@ -176,14 +176,14 @@ export default function DashboardPage() {
               <h2>📉 百公里油耗趋势</h2>
               <ConsumptionChart />
             </div>
-            </div>
+          </div>
 
-            <div className="chart-card">
-              <h2>⛽ 油量变化趋势</h2>
-              <FuelLevelChart />
-            </div>
+          <div className="chart-card">
+            <h2>⛽ 油量变化趋势</h2>
+            <FuelLevelChart />
+          </div>
 
-            {/* Tables */}
+          {/* Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="chart-card">
               <h2>🚙 最近行程</h2>
