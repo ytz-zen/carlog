@@ -20,10 +20,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch('/api/dashboard/stats/summary')
-      .then(r => r.json()).then(d => { setSummary(d); setLoading(false) })
+      .then(r => r.ok ? r.json() : null).then(d => { if (d) setSummary(d); setLoading(false) })
       .catch(() => setLoading(false))
     fetch('/api/config/odometer', { headers: { 'X-API-Key': 'carlog_dev_key_2026' } })
-      .then(r => r.json()).then(d => setOdometer({ initial: d.initialOdometer, current: d.currentOdometer, factor: d.calibrationFactor }))
+      .then(r => r.ok ? r.json() : null).then(d => {
+        if (d) setOdometer({ initial: d.initialOdometer ?? null, current: d.currentOdometer ?? null, factor: d.calibrationFactor ?? 1 })
+      })
       .catch(() => {})
   }, [])
 
