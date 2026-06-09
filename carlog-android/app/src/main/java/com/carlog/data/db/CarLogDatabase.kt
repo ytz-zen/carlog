@@ -12,6 +12,9 @@ interface TripDao {
     @Query("UPDATE trips SET uploadState = :state WHERE id = :tripId")
     suspend fun updateUploadState(tripId: String, state: String)
 
+    @Query("UPDATE trips SET endTime = :endTime, duration = :duration, distance = :distance, pointCount = :pointCount, uploadState = 'ENDED' WHERE id = :tripId")
+    suspend fun endTripLocally(tripId: String, endTime: Long, duration: Int, distance: Float, pointCount: Int)
+
     @Query("SELECT * FROM trips WHERE id = :tripId LIMIT 1")
     suspend fun getTripById(tripId: String): TripEntity?
 

@@ -243,6 +243,8 @@ class DiagnosticActivity : AppCompatActivity() {
     /** 定时刷新日志显示 */
     private fun refreshLog(tv: TextView) {
         tv.text = LogBuffer.getAll().joinToString("\n")
+        // 自动滚动到最底部
+        tv.post { tv.scrollTo(0, tv.bottom) }
     }
 
     override fun onDestroy() {

@@ -299,6 +299,8 @@ class GpsTrackService : Service(), LocationListener {
         distance = round(distance * 10) / 10
         val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
         val duration = ((endTime - db.tripDao().getTripById(tripId)!!.startTime) / 1000).toInt()
+        // 本地数据库标记行程已结束
+        db.tripDao().endTripLocally(tripId, endTime, duration, distance, points.size)
         uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration)
         updateNotification("行程结束: ${distance}km, ${duration}s")
     }
