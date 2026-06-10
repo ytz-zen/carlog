@@ -22,7 +22,7 @@ class HistoryTripAdapter(
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val view = convertView ?: LayoutInflater.from(ctx)
-            .inflate(R.layout.item_history_trip, parent, false)
+            .inflate(com.carlog.R.layout.item_history_trip, parent, false)
 
         val trip = trips[position]
         val tvTime = view.findViewById<TextView>(com.carlog.R.id.tvTripTime)
