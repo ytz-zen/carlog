@@ -195,12 +195,14 @@ class DiagnosticActivity : AppCompatActivity() {
             append(if (gpsOn) "📡 GPS: 已开启" else "📡 GPS: 未开启"); append(" | ")
             append(if (hasPermission) "权限: ✅" else "权限: ❌"); append('\n')
             if (isFresh) {
-                append("纬度: %.5f".format(lastLoc.latitude)); append('\n')
-                append("经度: %.5f".format(lastLoc.longitude)); append('\n')
-                append("速度: %.1f km/h".format(lastLoc.speed * 3.6f)); append('\n')
-                append("精度: %.0f m".format(lastLoc.accuracy)); append('\n')
-                append("高度: %.0f m".format(lastLoc.altitude)); append('\n')
-                append("时间: ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.CHINA).format(java.util.Date(lastLoc.time))}")
+                lastLoc?.let { loc ->
+                    append("纬度: %.5f".format(loc.latitude)); append('\n')
+                    append("经度: %.5f".format(loc.longitude)); append('\n')
+                    append("速度: %.1f km/h".format(loc.speed * 3.6f)); append('\n')
+                    append("精度: %.0f m".format(loc.accuracy)); append('\n')
+                    append("高度: %.0f m".format(loc.altitude)); append('\n')
+                    append("时间: ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.CHINA).format(java.util.Date(loc.time))}")
+                }
             } else if (gpsOn && hasPermission) {
                 append("⏳ 搜索GPS信号中...\n")
                 append("最后定位: ${lastLoc?.let {
