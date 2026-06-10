@@ -66,7 +66,7 @@ class DiagnosticActivity : AppCompatActivity() {
                     addLog(tvLog, "✅ identifyCar 成功")
                     addLog(tvLog, "   carId: ${result.carId}")
                     addLog(tvLog, "   tankId: ${result.tankId}")
-                    addLog(tvLog, "   isNew: ${result.isNew}")
+                    addLog(tvLog, "   name: ${result.name}")
                 } else {
                     addLog(tvLog, "❌ identifyCar 返回 null")
                 }
