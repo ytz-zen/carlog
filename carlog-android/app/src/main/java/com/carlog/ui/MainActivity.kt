@@ -3,6 +3,7 @@ package com.carlog.ui
 import android.content.Intent
 import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -212,11 +213,14 @@ class MainActivity : AppCompatActivity() {
             }
             tvDuration.setTextColor(android.graphics.Color.parseColor("#e2e8f0"))
 
-            // 获取已上传点数
+            // 获取实际GPS点数（从gps_points表查，而非行程实体的pointCount字段）
+            val totalPoints = withContext(Dispatchers.IO) {
+                db.tripDao().getTotalPointCount(active.id)
+            }
             val uploaded = withContext(Dispatchers.IO) {
                 db.tripDao().getUploadedPointCount(active.id)
             }
-            tvPoints.text = "已记录 ${active.pointCount} 点 | 已上传 $uploaded"
+            tvPoints.text = "已记录 $totalPoints 点 | 已上传 $uploaded"
             tvPoints.setTextColor(android.graphics.Color.parseColor("#94a3b8"))
         } else {
             btnStart.isEnabled = true
@@ -235,6 +239,13 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun identifyCar() {
         val carName = db.configDao().getString("car_name") ?: return
+        val carId = db.configDao().getString("car_id")
+        val tankId = db.configDao().getString("tank_id")
+        // 如果已有car_id/tank_id，不需要再识别（Settings里已经保存了）
+        if (carId != null && tankId != null) {
+            Log.d("CarLog", "MainActivity: 已有车辆ID，跳过识别")
+            return
+        }
         val (cId, tId) = withContext(Dispatchers.IO) {
             try {
                 val baseUrl = db.configDao().getString("server_url") ?: "http://192.168.5.193:3012"
@@ -247,12 +258,28 @@ class MainActivity : AppCompatActivity() {
                 conn.doOutput = true
                 conn.outputStream.write("{\"carName\":\"$carName\"}".toByteArray())
                 conn.outputStream.close()
-                if (conn.responseCode == 200) {
-                    val body = conn.inputStream.bufferedReader().readText()
+                val respCode = conn.responseCode
+                Log.d("CarLog", "MainActivity identifyCar HTTP: $respCode")
+                if (respCode == 200) {
+                    val body = try {
+                        conn.inputStream.bufferedReader().readText()
+                    } catch (e: Exception) {
+                        "no body"
+                    }
+                    Log.d("CarLog", "MainActivity identifyCar body: $body")
                     val json = com.google.gson.Gson().fromJson(body, Map::class.java)
                     json["carId"] as? String to json["tankId"] as? String
-                } else null to null
-            } catch (e: Exception) { null to null }
+                } else {
+                    val errBody = try {
+                        conn.errorStream?.bufferedReader()?.readText() ?: "unknown"
+                    } catch (_: Exception) { "unknown" }
+                    Log.d("CarLog", "MainActivity identifyCar error: HTTP $respCode $errBody")
+                    null to null
+                }
+            } catch (e: Exception) {
+                Log.d("CarLog", "MainActivity identifyCar exception: ${e.message}")
+                null to null
+            }
         }
         if (cId != null && tId != null) {
             carId = cId; tankId = tId

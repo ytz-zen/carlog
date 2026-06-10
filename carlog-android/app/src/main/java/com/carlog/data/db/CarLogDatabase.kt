@@ -30,8 +30,11 @@ interface TripDao {
     @Query("SELECT * FROM gps_points WHERE tripId = :tripId ORDER BY timestamp ASC")
     suspend fun getGpsPoints(tripId: String): List<GpsPointEntity>
 
+    @Query("SELECT COUNT(*) FROM gps_points WHERE tripId = :tripId")
+    suspend fun getTotalPointCount(tripId: String): Int
+
     @Query("DELETE FROM gps_points WHERE tripId = :tripId")
-    suspend fun deleteGpsPoints(tripId: String)
+    suspend fun deleteGpsPoints(tripId: String): Int
 
     @Query("SELECT COUNT(*) FROM gps_points WHERE tripId = :tripId AND uploaded = 0")
     suspend fun getPendingPointCount(tripId: String): Int

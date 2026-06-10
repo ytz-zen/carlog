@@ -96,13 +96,13 @@ class UploadRepo(
 
             try {
                 client.newCall(request).execute().use { response ->
+                    val respBody = response.body?.string() ?: ""
                     log("⬆️ 行程结束响应: code=${response.code}")
                     if (response.isSuccessful) {
                         db.tripDao().updateUploadState(tripId, "DONE")
                         log("✅ 行程结束上传成功: $tripId")
                     } else {
-                        val errBody = response.body?.string() ?: ""
-                        log("❌ 行程结束失败: HTTP ${response.code} - $errBody")
+                        log("❌ 行程结束失败: HTTP ${response.code} - $respBody")
                         db.tripDao().updateUploadState(tripId, "FAILED")
                     }
                 }
@@ -154,15 +154,14 @@ class UploadRepo(
 
         return try {
             client.newCall(request).execute().use { response ->
+                val respBody = response.body?.string() ?: ""
                 log("⬆️ 开始行程响应: code=${response.code}")
                 if (response.isSuccessful) {
-                    val json = response.body?.string() ?: ""
-                    log("⬆️ 开始行程响应体: $json")
-                    val map = gson.fromJson(json, Map::class.java)
+                    log("⬆️ 开始行程响应体: $respBody")
+                    val map = gson.fromJson(respBody, Map::class.java)
                     map["tripId"] as? String
                 } else {
-                    val errBody = response.body?.string() ?: ""
-                    log("❌ 开始行程失败: HTTP ${response.code} - $errBody")
+                    log("❌ 开始行程失败: HTTP ${response.code} - $respBody")
                     null
                 }
             }
@@ -191,13 +190,12 @@ class UploadRepo(
         return try {
             client.newCall(request).execute().use { response ->
                 log("🚗 identifyCar 响应: code=${response.code}")
+                val respBody = response.body?.string() ?: ""
+                log("🚗 identifyCar 响应体: $respBody")
                 if (response.isSuccessful) {
-                    val respBody = response.body?.string() ?: ""
-                    log("🚗 identifyCar 响应体: $respBody")
                     gson.fromJson(respBody, CarIdentifyResult::class.java)
                 } else {
-                    val errBody = response.body?.string() ?: ""
-                    log("❌ identifyCar 失败: HTTP ${response.code} - $errBody")
+                    log("❌ identifyCar 失败: HTTP ${response.code} - $respBody")
                     null
                 }
             }
