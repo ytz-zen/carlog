@@ -33,6 +33,7 @@ class GpsTrackService : Service(), LocationListener {
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private lateinit var locationManager: LocationManager
     private lateinit var db: CarLogDatabase
     private lateinit var tripDetector: TripDetector
@@ -52,13 +53,31 @@ class GpsTrackService : Service(), LocationListener {
 
     override fun onCreate() {
         super.onCreate()
-        db = CarLogDatabase.getInstance(this)
-        uploadRepo = UploadRepo(this, db)
-        createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification("启动中..."))
-        // 自动开始追踪（开应用即开始，不用等按按钮）
-        tripDetector = TripDetector()
-        serviceScope.launch { recoverPendingTrips() }
+        log("💾 Service onCreate 开始")
+        try {
+            db = CarLogDatabase.getInstance(this)
+            uploadRepo = UploadRepo(this, db)
+            log("💾 数据库连接成功")
+            createNotificationChannel()
+            startForeground(NOTIFICATION_ID, buildNotification("启动中..."))
+            log("💾 前台通知已创建")
+            // 自动开始追踪（开应用即开始，不用等按按钮）
+            tripDetector = TripDetector()
+            serviceScope.launch { 
+                try {
+                    log("💾 开始恢复检查")
+                    recoverPendingTrips()
+                    log("💾 恢复检查完成")
+                } catch (e: Exception) {
+                    log("💥 recoverPendingTrips 崩溃: ${e.message}")
+                    android.util.Log.e("CarLog-Crash", "recoverPendingTrips", e)
+                }
+            }
+            log("💾 Service onCreate 完成")
+        } catch (e: Exception) {
+            log("💥 Service onCreate 崩溃: ${e.message}")
+            android.util.Log.e("CarLog-Crash", "onCreate", e)
+        }
     }
 
     /** 恢复上次断电未结束的行程 */
