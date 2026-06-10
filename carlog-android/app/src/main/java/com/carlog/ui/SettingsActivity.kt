@@ -46,6 +46,24 @@ class SettingsActivity : AppCompatActivity() {
                 if (key.isNotEmpty()) db.configDao().saveString("api_key", key)
                 db.configDao().saveString("tank_capacity", tank)
                 db.configDao().saveString("push_logs", switchPushLogs.isChecked.toString())
+                
+                // 保存后立即识别车辆
+                if (name.isNotEmpty() && key.isNotEmpty()) {
+                    try {
+                        val uploadRepo = com.carlog.repo.UploadRepo(this@SettingsActivity, db)
+                        val result = uploadRepo.identifyCar(name)
+                        if (result != null) {
+                            db.configDao().saveString("car_id", result.carId)
+                            db.configDao().saveString("tank_id", result.tankId)
+                            Toast.makeText(this@SettingsActivity, "✅ 车辆已识别: ${result.name}", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(this@SettingsActivity, "⚠️ 车辆识别失败，请检查服务器设置", Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@SettingsActivity, "⚠️ 识别失败: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+                
                 Toast.makeText(this@SettingsActivity, "保存成功", Toast.LENGTH_SHORT).show()
                 finish()
             }
