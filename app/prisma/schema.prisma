@@ -191,3 +191,16 @@ model NotificationConfig {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model AndroidLog {
+  id        String   @id @default(uuid())
+  carId     String?
+  car       Car?     @relation(fields: [carId], references: [id])
+  source    String   @default("android")
+  timestamp DateTime
+  level     String   @default("info")
+  message   String
+
+  @@index([carId, timestamp])
+  @@index([timestamp])
+}

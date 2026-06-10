@@ -73,6 +73,17 @@ class GpsTrackService : Service(), LocationListener {
                     android.util.Log.e("CarLog-Crash", "recoverPendingTrips", e)
                 }
             }
+            // 定时推送日志到服务器（每60秒）
+            serviceScope.launch {
+                try {
+                    while (isActive) {
+                        delay(60000)
+                        uploadRepo.pushLogs()
+                    }
+                } catch (e: Exception) {
+                    log("💥 日志推送协程崩溃: ${e.message}")
+                }
+            }
             log("💾 Service onCreate 完成")
         } catch (e: Exception) {
             log("💥 Service onCreate 崩溃: ${e.message}")

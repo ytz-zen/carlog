@@ -216,6 +216,38 @@ class UploadRepo(
             null
         }
     }
+
+    suspend fun pushLogs(maxLines: Int = 200) {
+        // 检查是否开启日志推送
+        try {
+            val pushLogs = db.configDao().getString("push_logs")
+            if (pushLogs != "true") return
+        } catch (_: Exception) {}
+
+        val apiKey = getApiKey() ?: return
+        val baseUrl = getBaseUrl()
+        val lines = LogBuffer.getAll().takeLast(maxLines)
+        if (lines.isEmpty()) return
+
+        try {
+            val body = gson.toJson(mapOf("logs" to lines))
+            val request = Request.Builder()
+                .url("$baseUrl/api/logs")
+                .header(HEADER_API_KEY, apiKey)
+                .post(body.toRequestBody(JSON_MEDIA_TYPE))
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    log("📡 日志已推送: ${lines.size}条")
+                } else {
+                    log("⚠️ 日志推送失败: HTTP ${response.code}")
+                }
+            }
+        } catch (e: Exception) {
+            log("⚠️ 日志推送异常: ${e.message}")
+        }
+    }
 }
 
 data class CarIdentifyResult(val carId: String, val tankId: String, val name: String)

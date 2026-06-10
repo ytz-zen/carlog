@@ -3,6 +3,7 @@ package com.carlog.ui
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import com.carlog.R
 import com.carlog.data.db.CarLogDatabase
 import kotlinx.coroutines.*
@@ -21,6 +22,7 @@ class SettingsActivity : AppCompatActivity() {
         val etServer = findViewById<EditText>(R.id.etServerUrl)
         val etKey = findViewById<EditText>(R.id.etApiKey)
         val etTank = findViewById<EditText>(R.id.etTankCapacity)
+        val switchPushLogs = findViewById<SwitchCompat>(R.id.switchPushLogs)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
         scope.launch {
@@ -28,6 +30,9 @@ class SettingsActivity : AppCompatActivity() {
             db.configDao().getString("server_url")?.let { etServer.setText(it) }
             db.configDao().getString("api_key")?.let { etKey.setText(it) }
             db.configDao().getString("tank_capacity")?.let { etTank.setText(it) }
+            db.configDao().getString("push_logs")?.let {
+                switchPushLogs.isChecked = it == "true"
+            }
         }
 
         btnSave.setOnClickListener {
@@ -40,6 +45,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (server.isNotEmpty()) db.configDao().saveString("server_url", server)
                 if (key.isNotEmpty()) db.configDao().saveString("api_key", key)
                 db.configDao().saveString("tank_capacity", tank)
+                db.configDao().saveString("push_logs", switchPushLogs.isChecked.toString())
                 Toast.makeText(this@SettingsActivity, "保存成功", Toast.LENGTH_SHORT).show()
                 finish()
             }

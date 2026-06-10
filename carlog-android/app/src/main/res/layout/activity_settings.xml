@@ -27,6 +27,23 @@
         <EditText android:id="@+id/etTankCapacity" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:hint="60" android:inputType="numberDecimal" />
 
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_marginTop="16dp" android:padding="12dp"
+            android:background="#22FFFFFF">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="实时推送日志" android:textSize="14sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="将运行日志发送到后台服务器，方便排查问题"
+                    android:textSize="11sp" android:textColor="#AAAAAA" />
+            </LinearLayout>
+            <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchPushLogs"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:checked="false" />
+        </LinearLayout>
+
         <Button android:id="@+id/btnSave" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="保存" android:layout_marginTop="24dp" android:padding="16dp" />
     </LinearLayout>

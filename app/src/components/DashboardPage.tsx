@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/cars', icon: '🚙', label: '车辆' },
   { href: '/expenses', icon: '💰', label: '费用' },
   { href: '/reminders', icon: '⏰', label: '提醒' },
+  { href: '/logs', icon: '📋', label: '运行日志' },
 ]
 
 export default function DashboardPage() {
