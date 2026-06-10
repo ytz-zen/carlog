@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const granularity = searchParams.get('granularity') || 'day'
   const period = parseInt(searchParams.get('period') || '30')
+  const carId = searchParams.get('carId') || undefined
   const rangeStart = startOfDay(subDays(new Date(), period))
   const rangeEnd = new Date()
 
@@ -23,7 +24,9 @@ export async function GET(request: NextRequest) {
     labels = days.map(d => format(d, 'MM/dd'))
     for (const day of days) {
       const ds = startOfDay(day), de = new Date(ds.getTime() + 86400000)
-      const trips = await prisma.trip.findMany({ where: { startTime: { gte: ds, lt: de } }, select: { distance: true, duration: true } })
+      const where: Record<string, any> = { startTime: { gte: ds, lt: de } }
+      if (carId) where.carId = carId
+      const trips = await prisma.trip.findMany({ where, select: { distance: true, duration: true } })
       const totalDist = trips.reduce((s, t) => s + (t.distance || 0), 0)
       const totalDur = trips.reduce((s, t) => s + (t.duration || 0), 0)
       distanceData.push(totalDist > 0 ? Math.round(totalDist * 10) / 10 : 0)
@@ -34,17 +37,21 @@ export async function GET(request: NextRequest) {
     labels = weeks.map(d => format(d, 'MM/dd'))
     for (const ws of weeks) {
       const we = endOfWeek(ws)
-      const trips = await prisma.trip.findMany({ where: { startTime: { gte: ws, lte: we } }, select: { distance: true, duration: true } })
-      const totalDist = trips.reduce((s, t) => s + (t.distance || 0), 0)
-      const totalDur = trips.reduce((s, t) => s + (t.duration || 0), 0)
+      const where: Record<string, any> = { startTime: { gte: ws, lte: we } }
+      if (carId) where.carId = carId
+      const trips = await prisma.trip.findMany({ where, select: { distance: true, duration: true } })
+      const totalDist = trips.reduce((s: number, t: any) => s + (t.distance || 0), 0)
+      const totalDur = trips.reduce((s: number, t: any) => s + (t.duration || 0), 0)
       distanceData.push(Math.round(totalDist * 10) / 10)
       durationData.push(totalDur > 0 ? totalDur / 60 : 0)
     }
   }
 
   // Fuel data
+  const tripWhere: Record<string, any> = { startTime: { gte: rangeStart, lte: rangeEnd } }
+  if (carId) tripWhere.carId = carId
   const tripsIn = await prisma.trip.findMany({
-    where: { startTime: { gte: rangeStart, lte: rangeEnd } },
+    where: tripWhere,
     include: { tank: true }
   })
   for (const t of tripsIn) {

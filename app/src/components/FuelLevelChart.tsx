@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react'
 interface DailyFuel { date: string; avg: number }
 interface RefuelEvent { date: string; before: number; after: number; added: number }
 
-export default function FuelLevelChart() {
+export default function FuelLevelChart({ carId }: { carId?: string | null }) {
   const [data, setData] = useState<DailyFuel[]>([])
   const [refuels, setRefuels] = useState<RefuelEvent[]>([])
   const [period, setPeriod] = useState(30)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch(`/api/dashboard/stats/fuel-level?period=${period}`, { credentials: 'include' })
+    const params = carId ? `&carId=${carId}` : ''
+    fetch(`/api/dashboard/stats/fuel-level?period=${period}${params}`)
       .then(r => { if (!r.ok) throw new Error(r.status + ''); return r.json() })
       .then(d => { setData(d.daily || []); setRefuels(d.refuelEvents || []) })
       .catch(e => setError(String(e)))

@@ -6,6 +6,7 @@ import ConsumptionChart from '@/components/ConsumptionChart'
 import TripList from '@/components/TripList'
 import FuelLog from '@/components/FuelLog'
 import FuelLevelChart from '@/components/FuelLevelChart'
+import TripHistoryTable from '@/components/TripHistoryTable'
 import { useRouter, usePathname } from 'next/navigation'
 
 type Stats = { trips: number; distance: number; fuel: number; spent: number }
@@ -14,9 +15,9 @@ type Summary = { today: Stats; week: Stats; month: Stats; total: Stats }
 const NAV_ITEMS = [
   { href: '/', icon: '📊', label: '仪表盘' },
   { href: '/trips', icon: '🚗', label: '行程' },
+  { href: '/cars', icon: '🚙', label: '车辆' },
   { href: '/expenses', icon: '💰', label: '费用' },
   { href: '/reminders', icon: '⏰', label: '提醒' },
-  { href: '/cars', icon: '🚙', label: '车辆' },
 ]
 
 export default function DashboardPage() {
@@ -30,9 +31,20 @@ export default function DashboardPage() {
   const [showInit, setShowInit] = useState(false)
   const [initInput, setInitInput] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [cars, setCars] = useState<Car[]>([])
+  const [selectedCarId, setSelectedCarId] = useState<string | null>(null)
+  const [activeTrip, setActiveTrip] = useState<ActiveTrip | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+
+  interface Car { id: string; name: string; isOnline: boolean; lastSeenAt: string | null }
+  interface ActiveTrip {
+    id: string; startTime: string; carName: string; tankName: string;
+    uploadedPointCount: number
+  }
 
   useEffect(() => {
-    fetch('/api/dashboard/stats/summary')
+    const params = selectedCarId ? `?carId=${selectedCarId}` : ''
+    fetch(`/api/dashboard/stats/summary${params}`)
       .then(r => r.ok ? r.json() : null).then(d => { if (d) setSummary(d); setLoading(false) })
       .catch(() => setLoading(false))
     fetch('/api/config/odometer', { headers: { 'X-API-Key': 'carlog_dev_key_2026' } })
@@ -40,7 +52,27 @@ export default function DashboardPage() {
         if (d) setOdometer({ initial: d.initialOdometer ?? null, current: d.currentOdometer ?? null, factor: d.calibrationFactor ?? 1 })
       })
       .catch(() => {})
-  }, [])
+    // 加载车辆列表
+    fetch('/api/cars').then(r => r.json()).then(setCars).catch(() => {})
+    // 加载活跃行程
+    const params = selectedCarId ? `?carId=${selectedCarId}` : ''
+    fetch(`/api/trips/active${params}`).then(r => r.json()).then(d => {
+      if (d.trip) setActiveTrip(d.trip)
+      else setActiveTrip(null)
+    }).catch(() => {})
+    // 计时器
+    const t = setInterval(() => setElapsed(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [selectedCarId])
+
+  const fmtElapsed = (ms: number) => {
+    if (!activeTrip) return '--:--:--'
+    const sec = Math.floor((ms - new Date(activeTrip.startTime).getTime()) / 1000)
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    const s = sec % 60
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+  }
 
   if (loading || !summary) {
     return <div className="flex items-center justify-center h-screen text-xl text-gray-400">加载中...</div>
@@ -91,7 +123,25 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-slate-800">仪表盘</h2>
             <p className="text-xs text-slate-400">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* 车辆切换下拉 */}
+            {cars.length > 1 && (
+              <select value={selectedCarId || ''} onChange={e => setSelectedCarId(e.target.value || null)}
+                className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
+                {cars.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}{c.isOnline ? ' 🟢' : ''}</option>
+                ))}
+              </select>
+            )}
+            {/* 活跃行程状态 */}
+            {activeTrip && (
+              <div className="flex items-center gap-3 text-sm bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                <span className="text-emerald-700 font-medium animate-pulse">● 正在行驶</span>
+                <span className="text-slate-600">自动记录 · 已行驶 <span className="font-mono font-bold text-slate-800">{fmtElapsed(elapsed)}</span></span>
+                <span className="text-slate-400">|</span>
+                <span className="text-slate-600">已上传 <span className="font-mono font-bold text-slate-800">{activeTrip.uploadedPointCount}</span> 个点</span>
+              </div>
+            )}
             {odometer && (
               <div className="text-xs text-slate-400 hidden sm:block">
                 里程: <span className="font-mono font-medium text-slate-600">
@@ -164,23 +214,29 @@ export default function DashboardPage() {
           {/* Charts */}
           <div className="chart-card">
             <h2>📊 行驶里程趋势</h2>
-            <TripChart />
+            <TripChart carId={selectedCarId} />
+          </div>
+
+          {/* History Trips */}
+          <div className="chart-card">
+            <h2>📋 历史行程</h2>
+            <TripHistoryTable carId={selectedCarId} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="chart-card">
               <h2>⛽ 加油记录趋势</h2>
-              <FuelChart />
+              <FuelChart carId={selectedCarId} />
             </div>
             <div className="chart-card">
               <h2>📉 百公里油耗趋势</h2>
-              <ConsumptionChart />
+              <ConsumptionChart carId={selectedCarId} />
             </div>
           </div>
 
           <div className="chart-card">
             <h2>⛽ 油量变化趋势</h2>
-            <FuelLevelChart />
+            <FuelLevelChart carId={selectedCarId} />
           </div>
 
           {/* Tables */}

@@ -7,10 +7,14 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url)
   const period = parseInt(url.searchParams.get('period') || '30')
+  const carId = url.searchParams.get('carId') || undefined
   const rangeStart = new Date(Date.now() - period * 86400000)
 
+  const where: Record<string, any> = { timestamp: { gte: rangeStart }, fuelLevel: { not: null } }
+  if (carId) where.carId = carId
+
   const points = await prisma.gpsPoint.findMany({
-    where: { timestamp: { gte: rangeStart }, fuelLevel: { not: null } },
+    where,
     orderBy: { timestamp: 'asc' },
     select: { timestamp: true, fuelLevel: true },
   })

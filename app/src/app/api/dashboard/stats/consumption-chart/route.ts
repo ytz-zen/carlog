@@ -1,18 +1,22 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { checkCookieAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { subDays, startOfDay, format } from 'date-fns'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   if (!await checkCookieAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const url = new URL(request.url)
-  const period = parseInt(url.searchParams.get('period') || '30')
+  const { searchParams } = new URL(request.url)
+  const period = parseInt(searchParams.get('period') || '30')
+  const carId = searchParams.get('carId') || undefined
   const rangeStart = startOfDay(subDays(new Date(), period))
 
+  const where: Record<string, any> = { startTime: { gte: rangeStart }, fuelPer100km: { not: null } }
+  if (carId) where.carId = carId
+
   const trips = await prisma.trip.findMany({
-    where: { startTime: { gte: rangeStart }, fuelPer100km: { not: null } },
+    where,
     select: { startTime: true, distance: true, fuelPer100km: true, duration: true },
     orderBy: { startTime: 'asc' }
   })

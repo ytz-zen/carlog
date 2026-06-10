@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
-export default function TripChart() {
+export default function TripChart({ carId }: { carId?: string | null }) {
   const [data, setData] = useState<{date: string; distance: number}[]>([])
   const [period, setPeriod] = useState('30d')
 
   useEffect(() => {
-    fetch(`/api/dashboard/stats/trip-chart?granularity=day&period=${period}`)
+    const params = carId ? `&carId=${carId}` : ''
+    fetch(`/api/dashboard/stats/trip-chart?granularity=day&period=${period}${params}`)
       .then(r => r.json()).then(d => {
         setData(d.labels.map((l: string, i: number) => ({ date: l, distance: d.distance[i] || 0 })))
       }).catch(() => setData([]))

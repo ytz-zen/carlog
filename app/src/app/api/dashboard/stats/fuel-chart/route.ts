@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const granularity = searchParams.get('granularity') || 'day'
   const period = parseInt(searchParams.get('period') || '30')
+  const carId = searchParams.get('carId') || undefined
   const rangeStart = startOfDay(subDays(new Date(), period))
   const rangeEnd = new Date()
 
@@ -22,8 +23,10 @@ export async function GET(request: NextRequest) {
     labels = days.map(d => format(d, 'MM/dd'))
     for (const day of days) {
       const ds = startOfDay(day), de = new Date(ds.getTime() + 86400000)
+      const where: Record<string, any> = { timestamp: { gte: ds, lt: de } }
+      if (carId) where.carId = carId
       const res = await prisma.fuelEvent.aggregate({
-        where: { timestamp: { gte: ds, lt: de } }, _sum: { fuelAdded: true, totalPrice: true }
+        where, _sum: { fuelAdded: true, totalPrice: true }
       })
       fuelData.push(Math.round((res._sum.fuelAdded || 0) * 10) / 10)
       costData.push(Math.round((res._sum.totalPrice || 0) * 100) / 100)
@@ -40,11 +43,13 @@ export async function GET(request: NextRequest) {
       costData.push(Math.round((res._sum.totalPrice || 0) * 100) / 100)
     }
   } else {
-    const weeks = eachWeekOfInterval({ start: rangeStart, end: rangeEnd })
+  const weeks = eachWeekOfInterval({ start: rangeStart, end: rangeEnd })
     labels = weeks.map(d => format(d, 'MM/dd'))
     for (const ws of weeks) {
       const we = endOfWeek(ws)
-      const res = await prisma.fuelEvent.aggregate({ where: { timestamp: { gte: ws, lte: we } }, _sum: { fuelAdded: true, totalPrice: true } })
+      const where: Record<string, any> = { timestamp: { gte: ws, lte: we } }
+      if (carId) where.carId = carId
+      const res = await prisma.fuelEvent.aggregate({ where, _sum: { fuelAdded: true, totalPrice: true } })
       fuelData.push(Math.round((res._sum.fuelAdded || 0) * 10) / 10)
       costData.push(Math.round((res._sum.totalPrice || 0) * 100) / 100)
     }

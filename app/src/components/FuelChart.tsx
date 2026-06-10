@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
-export default function FuelChart() {
+export default function FuelChart({ carId }: { carId?: string | null }) {
   const [data, setData] = useState<{date: string; fuel: number; cost: number}[]>([])
   const [period, setPeriod] = useState('30d')
 
   useEffect(() => {
-    fetch(`/api/dashboard/stats/fuel-chart?granularity=day&period=${period}`)
+    const params = carId ? `&carId=${carId}` : ''
+    fetch(`/api/dashboard/stats/fuel-chart?granularity=day&period=${period}${params}`)
       .then(r => r.json()).then(d => {
         setData(d.labels.map((l: string, i: number) => ({ date: l, fuel: d.fuelAdded[i] || 0, cost: d.totalPrice[i] || 0 })))
       }).catch(() => setData([]))
