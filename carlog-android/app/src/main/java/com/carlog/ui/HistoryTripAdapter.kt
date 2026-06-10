@@ -25,9 +25,9 @@ class HistoryTripAdapter(
             .inflate(R.layout.item_history_trip, parent, false)
 
         val trip = trips[position]
-        val tvTime = view.findViewById<TextView>(R.id.tvTripTime)
-        val tvDuration = view.findViewById<TextView>(R.id.tvTripDuration)
-        val tvDistance = view.findViewById<TextView>(R.id.tvTripDistance)
+        val tvTime = view.findViewById<TextView>(com.carlog.R.id.tvTripTime)
+        val tvDuration = view.findViewById<TextView>(com.carlog.R.id.tvTripDuration)
+        val tvDistance = view.findViewById<TextView>(com.carlog.R.id.tvTripDistance)
 
         val start = dateFormat.format(java.util.Date(trip.startTime.toLong()))
         val end = trip.endTime?.let {

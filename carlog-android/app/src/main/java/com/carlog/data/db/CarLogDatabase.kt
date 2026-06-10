@@ -35,6 +35,9 @@ interface TripDao {
 
     @Query("SELECT COUNT(*) FROM gps_points WHERE tripId = :tripId AND uploaded = 0")
     suspend fun getPendingPointCount(tripId: String): Int
+
+    @Query("SELECT COUNT(*) FROM gps_points WHERE tripId = :tripId AND uploaded = 1")
+    suspend fun getUploadedPointCount(tripId: String): Int
 }
 
 @Dao

@@ -18,6 +18,8 @@ class MainActivity : AppCompatActivity() {
     private var obdReader: com.carlog.tracker.ObdReader? = null
     private var obdConnected = false
     private lateinit var historyAdapter: HistoryTripAdapter
+    private lateinit var btnObd: Button
+    private lateinit var btnStart: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,10 +35,10 @@ class MainActivity : AppCompatActivity() {
         val tvTripPoints = findViewById<TextView>(R.id.tvTripPoints)
         val tvGpsData = findViewById<TextView>(R.id.tvGpsData)
         val tvObdData = findViewById<TextView>(R.id.tvObdData)
-        val btnStart = findViewById<Button>(R.id.btnStart)
+        val btnStart = findViewById<Button>(R.id.btnStart).also { this.btnStart = it }
         val btnStop = findViewById<Button>(R.id.btnStop)
         val btnRefresh = findViewById<ImageButton>(R.id.btnRefresh)
-        val btnObd = findViewById<Button>(R.id.btnObdConnect)
+        val btnObd = findViewById<Button>(R.id.btnObdConnect).also { this.btnObd = it }
         val lvHistory = findViewById<ListView>(R.id.lvHistoryTrips)
 
         // Init history adapter
@@ -99,7 +101,7 @@ class MainActivity : AppCompatActivity() {
 
         // OBD toggle
         btnObd.setOnClickListener {
-            scope.launch { handleObdToggle(tvObdData, tvObd) }
+            scope.launch { handleObdToggle(tvObdData) }
         }
 
         // Settings + Diagnostic nav (bottom bar via navigation if added, or keep as-is)
@@ -298,7 +300,8 @@ class MainActivity : AppCompatActivity() {
     )
 
     /** OBD 连接/断开 */
-    private suspend fun handleObdToggle(tvObd: TextView, btn: Button) {
+    private suspend fun handleObdToggle(tvObd: TextView) {
+        val btn = btnObd
         if (obdConnected) {
             obdReader?.disconnect()
             obdReader = null
