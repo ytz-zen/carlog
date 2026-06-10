@@ -54,18 +54,39 @@ class DiagnosticActivity : AppCompatActivity() {
         // Test upload
         findViewById<Button>(R.id.btnTestUpload).setOnClickListener {
             scope.launch {
-                addLog(tvLog, "开始测试上传...")
+                addLog(tvLog, "========== 开始测试 ==========")
+                
+                // 1. 测试 identifyCar
+                val carName = db.configDao().getString("car_name") ?: "(未设置)"
+                addLog(tvLog, "🚗 车辆名称: $carName")
+                val result = withContext(Dispatchers.IO) {
+                    uploadRepo.identifyCar(carName)
+                }
+                if (result != null) {
+                    addLog(tvLog, "✅ identifyCar 成功")
+                    addLog(tvLog, "   carId: ${result.carId}")
+                    addLog(tvLog, "   tankId: ${result.tankId}")
+                    addLog(tvLog, "   isNew: ${result.isNew}")
+                } else {
+                    addLog(tvLog, "❌ identifyCar 返回 null")
+                }
+                
+                // 2. 测试上传
                 val active = db.tripDao().getActiveTrip()
                 if (active != null && active.endTime == null) {
                     val pending = db.tripDao().getPendingPointCount(active.id)
-                    addLog(tvLog, "当前行程 $pending 个未上传GPS点")
+                    addLog(tvLog, "📍 当前行程 ${pending} 个未上传GPS点")
                     if (pending > 0) {
                         uploadRepo.uploadPendingPoints(active.id)
                         addLog(tvLog, "⬆️ 已尝试上传 $pending 个点")
+                    } else {
+                        addLog(tvLog, "ℹ️ 当前行程无待上传的点")
                     }
                 } else {
-                    addLog(tvLog, "当前没有进行中的行程，无法测试上传")
+                    addLog(tvLog, "ℹ️ 当前没有进行中的行程")
                 }
+                
+                addLog(tvLog, "========== 测试完成 ==========")
                 refreshLocal(tvLocal)
             }
         }

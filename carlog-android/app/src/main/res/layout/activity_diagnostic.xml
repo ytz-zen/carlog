@@ -98,12 +98,20 @@
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="📋 运行日志" android:textSize="16sp" android:textStyle="bold"
                 android:textColor="#1e293b" android:layout_marginBottom="12dp" />
-            <TextView android:id="@+id/diagLog" android:layout_width="match_parent"
-                android:layout_height="200dp" android:text="暂无日志"
-                android:textSize="10sp" android:textColor="#94a3b8"
-                android:background="#1e293b" android:padding="8dp"
-                android:typeface="monospace"
-                android:scrollbars="vertical" />
+            <LinearLayout android:layout_width="match_parent"
+                android:layout_height="240dp" android:orientation="vertical">
+                <ScrollView android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#1e293b" android:padding="8dp"
+                    android:fadingEdgeLength="8dp"
+                    android:requiresFadingEdge="vertical">
+                    <TextView android:id="@+id/diagLog" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:text="暂无日志"
+                        android:textSize="11sp" android:textColor="#94a3b8"
+                        android:typeface="monospace"
+                        android:lineSpacingExtra="2dp" />
+                </ScrollView>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
