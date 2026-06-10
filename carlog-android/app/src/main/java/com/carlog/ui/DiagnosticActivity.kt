@@ -47,7 +47,6 @@ class DiagnosticActivity : AppCompatActivity() {
                         conn.readTimeout = 5000
                         conn.inputStream
                         val responseCode = conn.responseCode
-                        val elapsed = conn.connected // just to ensure connected
                         responseCode to true
                     } catch (e: Exception) {
                         null to false
