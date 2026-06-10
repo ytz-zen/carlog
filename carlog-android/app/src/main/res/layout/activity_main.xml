@@ -14,17 +14,19 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="#1e293b"
-        android:padding="12dp"
+        android:padding="8dp"
         android:elevation="4dp">
 
         <TextView
             android:id="@+id/tvServerStatus"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="2"
             android:text="🟡 连接中..."
-            android:textSize="13sp"
-            android:textColor="#94a3b8" />
+            android:textSize="11sp"
+            android:textColor="#94a3b8"
+            android:lines="1"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/tvGpsStatus"
@@ -32,14 +34,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="📡 GPS: --"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:textColor="#94a3b8"
-            android:gravity="center" />
+            android:gravity="center"
+            android:lines="1"
+            android:ellipsize="end" />
 
         <ImageButton
             android:id="@+id/btnRefresh"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@android:drawable/ic_menu_rotate"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="刷新"
@@ -47,33 +51,32 @@
 
         <ImageButton
             android:id="@+id/btnSettings"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@android:drawable/ic_menu_manage"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="设置"
             android:scaleType="center"
-            android:layout_marginStart="4dp" />
+            android:layout_marginStart="2dp" />
 
         <ImageButton
             android:id="@+id/btnDiagnostic"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@android:drawable/ic_menu_search"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="诊断"
             android:scaleType="center"
-            android:layout_marginStart="4dp" />
+            android:layout_marginStart="2dp" />
     </LinearLayout>
 
     <!-- 第一行：行程状态 + GPS/OBD -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_weight="3"
         android:orientation="horizontal"
-        android:padding="12dp"
-        android:weightSum="2">
+        android:padding="8dp">
 
         <!-- 左侧：行程状态 -->
         <LinearLayout
@@ -83,78 +86,79 @@
             android:layout_marginEnd="8dp"
             android:orientation="vertical"
             android:background="#1e293b"
-            android:padding="16dp"
+            android:padding="12dp"
             android:elevation="2dp"
             android:gravity="center">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🚗 行程状态"
-                android:textSize="16sp"
+                android:text="🚗 行程"
+                android:textSize="14sp"
                 android:textColor="#64748b"
                 android:textStyle="bold"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/tvTripMode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textColor="#fbbf24"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="4dp" />
 
             <TextView
                 android:id="@+id/tvTripDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--"
-                android:textSize="36sp"
+                android:textSize="28sp"
                 android:textColor="#e2e8f0"
                 android:textStyle="bold"
                 android:fontFamily="monospace"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/tvTripPoints"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textColor="#94a3b8"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="8dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
 
                 <Button
                     android:id="@+id/btnStart"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:text="▶ 开始"
                     android:textAllCaps="false"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:backgroundTint="#4f46e5"
                     android:textColor="#fff"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="3dp"
                     app:cornerRadius="8dp" />
 
                 <Button
                     android:id="@+id/btnStop"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:text="⏹ 结束"
                     android:textAllCaps="false"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:backgroundTint="#ef4444"
                     android:textColor="#fff"
-                    android:layout_marginStart="4dp"
+                    android:layout_marginStart="3dp"
                     app:cornerRadius="8dp" />
             </LinearLayout>
         </LinearLayout>
@@ -176,27 +180,28 @@
                 android:layout_marginBottom="8dp"
                 android:orientation="vertical"
                 android:background="#1e293b"
-                android:padding="16dp"
+                android:padding="12dp"
                 android:elevation="2dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📡 GPS 定位"
-                    android:textSize="16sp"
+                    android:text="📡 GPS"
+                    android:textSize="14sp"
                     android:textColor="#64748b"
                     android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:id="@+id/tvGpsData"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="--"
-                    android:textSize="13sp"
+                    android:textSize="11sp"
                     android:textColor="#cbd5e1"
                     android:fontFamily="monospace"
-                    android:lineSpacingMultiplier="1.4" />
+                    android:lines="8"
+                    android:ellipsize="end" />
             </LinearLayout>
 
             <!-- OBD 信息 -->
@@ -206,7 +211,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical"
                 android:background="#1e293b"
-                android:padding="16dp"
+                android:padding="12dp"
                 android:elevation="2dp">
 
                 <LinearLayout
@@ -214,21 +219,21 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="8dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="🔌 OBD 数据"
-                        android:textSize="16sp"
+                        android:text="🔌 OBD"
+                        android:textSize="14sp"
                         android:textColor="#64748b"
                         android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btnObdConnect"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="28dp"
                         android:text="连接"
                         android:textAllCaps="false"
                         android:textSize="11sp"
@@ -242,10 +247,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="--"
-                    android:textSize="13sp"
+                    android:textSize="11sp"
                     android:textColor="#cbd5e1"
                     android:fontFamily="monospace"
-                    android:lineSpacingMultiplier="1.4" />
+                    android:lines="6"
+                    android:ellipsize="end" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -254,21 +260,21 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_weight="2"
         android:layout_marginTop="8dp"
         android:orientation="vertical"
         android:background="#1e293b"
-        android:padding="16dp"
+        android:padding="12dp"
         android:elevation="2dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="📋 历史行程"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textColor="#64748b"
             android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginBottom="8dp" />
 
         <ListView
             android:id="@+id/lvHistoryTrips"
