@@ -69,10 +69,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Auto start tracking
+        // Auto start: identify car first, then start tracking
         scope.launch {
             checkServer(tvServer)
             checkGps(tvGps, tvGpsData)
+            // 先完成车辆识别，再启动服务
+            val carName = db.configDao().getString("car_name")
+            if (carName != null) {
+                val uploadRepo = com.carlog.repo.UploadRepo(this@MainActivity, db)
+                val result = uploadRepo.identifyCar(carName)
+                if (result != null) {
+                    db.configDao().saveString("car_id", result.carId)
+                    db.configDao().saveString("tank_id", result.tankId)
+                    tvServer.text = "✅ 服务器已连接 | 车辆: ${result.name}"
+                    Toast.makeText(this@MainActivity, "车辆已识别: ${result.name}", Toast.LENGTH_SHORT).show()
+                } else {
+                    tvServer.text = "❌ 车辆识别失败"
+                }
+            }
+            // 启动 GPS 服务
             startForegroundService(Intent(this@MainActivity, GpsTrackService::class.java).apply {
                 action = "com.carlog.START_TRACKING"
             })

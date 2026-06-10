@@ -136,13 +136,46 @@ class GpsTrackService : Service(), LocationListener {
 
     /** Identify this car on the server (create or find by name) */
     private suspend fun identifyCar() {
-        val carName = db.configDao().getString("car_name") ?: return
-        val result = uploadRepo.identifyCar(carName)
-        if (result != null) {
-            carId = result.carId
-            tankId = result.tankId
-            db.configDao().saveString("car_id", result.carId)
-            db.configDao().saveString("tank_id", result.tankId)
+        val carName = db.configDao().getString("car_name")
+        if (carName == null) {
+            log("⚠️ identifyCar: car_name 未设置，跳过")
+            return
+        }
+        // 如果本地已有 car_id，标记在线
+        val existingCarId = db.configDao().getString("car_id")
+        if (existingCarId != null) {
+            log("🚗 本地已有 car_id=$existingCarId，标记在线")
+            try {
+                val result = uploadRepo.identifyCar(carName)
+                if (result != null) {
+                    carId = result.carId
+                    tankId = result.tankId
+                    log("✅ identifyCar 成功: carId=${result.carId}, tankId=${result.tankId}")
+                } else {
+                    carId = existingCarId
+                    log("⚠️ identifyCar 失败，使用本地 car_id=$existingCarId")
+                }
+            } catch (e: Exception) {
+                log("⚠️ identifyCar 异常: ${e.message}，使用本地 car_id=$existingCarId")
+                carId = existingCarId
+            }
+            return
+        }
+        // 本地无 car_id，首次识别
+        log("🚗 首次车辆识别: name=$carName")
+        try {
+            val result = uploadRepo.identifyCar(carName)
+            if (result != null) {
+                carId = result.carId
+                tankId = result.tankId
+                db.configDao().saveString("car_id", result.carId)
+                db.configDao().saveString("tank_id", result.tankId)
+                log("✅ identifyCar 成功: carId=${result.carId}, tankId=${result.tankId}")
+            } else {
+                log("❌ identifyCar 返回 null")
+            }
+        } catch (e: Exception) {
+            log("❌ identifyCar 异常: ${e.message}")
         }
     }
 
