@@ -141,93 +141,83 @@ class UploadRepo(
     }
 
     suspend fun initializeTrip(): String? {
-        try {
-            val apiKey = getApiKey() ?: return null
-            val baseUrl = getBaseUrl()
-            log("⬆️ 请求开始行程")
-            val body = gson.toJson(mapOf("action" to "start"))
+        val apiKey = getApiKey() ?: return null
+        val baseUrl = getBaseUrl()
+        log("⬆️ 请求开始行程")
+        val body = gson.toJson(mapOf("action" to "start"))
 
-            val request = Request.Builder()
-                .url("$baseUrl/api/trips")
-                .header(HEADER_API_KEY, apiKey)
-                .post(body.toRequestBody(JSON_MEDIA_TYPE))
-                .build()
+        val request = Request.Builder()
+            .url("$baseUrl/api/trips")
+            .header(HEADER_API_KEY, apiKey)
+            .post(body.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
 
-            return try {
-                client.newCall(request).execute().use { response ->
-                    log("⬆️ 开始行程响应: code=${response.code}")
-                    if (response.isSuccessful) {
-                        val json = response.body?.string() ?: ""
-                        log("⬆️ 开始行程响应体: $json")
-                        val map = gson.fromJson(json, Map::class.java)
-                        map["tripId"] as? String
-                    } else {
-                        val errBody = response.body?.string() ?: ""
-                        log("❌ 开始行程失败: HTTP ${response.code} - $errBody")
-                        null
-                    }
+        return try {
+            client.newCall(request).execute().use { response ->
+                log("⬆️ 开始行程响应: code=${response.code}")
+                if (response.isSuccessful) {
+                    val json = response.body?.string() ?: ""
+                    log("⬆️ 开始行程响应体: $json")
+                    val map = gson.fromJson(json, Map::class.java)
+                    map["tripId"] as? String
+                } else {
+                    val errBody = response.body?.string() ?: ""
+                    log("❌ 开始行程失败: HTTP ${response.code} - $errBody")
+                    null
                 }
-            } catch (e: IOException) {
-                log("❌ 开始行程异常: ${e.message}")
-                null
             }
-        } catch (e: Exception) {
-            log("❌ initializeTrip 异常: ${e.message}")
+        } catch (e: IOException) {
+            log("❌ 开始行程异常: ${e.message}")
             null
         }
     }
 
     suspend fun identifyCar(carName: String): CarIdentifyResult? {
-        try {
-            val apiKey = getApiKey()
-            if (apiKey == null) {
-                log("❌ identifyCar: API Key 未设置")
-                return null
-            }
-            val baseUrl = getBaseUrl()
-            log("🚗 请求车辆识别: name=$carName, url=$baseUrl/api/cars/identify")
-            
-            val body = gson.toJson(mapOf("carName" to carName))
-            val request = Request.Builder()
-                .url("$baseUrl/api/cars/identify")
-                .header(HEADER_API_KEY, apiKey)
-                .post(body.toRequestBody(JSON_MEDIA_TYPE))
-                .build()
-            
-            return try {
-                client.newCall(request).execute().use { response ->
-                    log("🚗 identifyCar 响应: code=${response.code}")
-                    if (response.isSuccessful) {
-                        val respBody = response.body?.string() ?: ""
-                        log("🚗 identifyCar 响应体: $respBody")
-                        gson.fromJson(respBody, CarIdentifyResult::class.java)
-                    } else {
-                        val errBody = response.body?.string() ?: ""
-                        log("❌ identifyCar 失败: HTTP ${response.code} - $errBody")
-                        null
-                    }
+        val apiKey = getApiKey()
+        if (apiKey == null) {
+            log("❌ identifyCar: API Key 未设置")
+            return null
+        }
+        val baseUrl = getBaseUrl()
+        log("🚗 请求车辆识别: name=$carName, url=$baseUrl/api/cars/identify")
+        
+        val body = gson.toJson(mapOf("carName" to carName))
+        val request = Request.Builder()
+            .url("$baseUrl/api/cars/identify")
+            .header(HEADER_API_KEY, apiKey)
+            .post(body.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+        
+        return try {
+            client.newCall(request).execute().use { response ->
+                log("🚗 identifyCar 响应: code=${response.code}")
+                if (response.isSuccessful) {
+                    val respBody = response.body?.string() ?: ""
+                    log("🚗 identifyCar 响应体: $respBody")
+                    gson.fromJson(respBody, CarIdentifyResult::class.java)
+                } else {
+                    val errBody = response.body?.string() ?: ""
+                    log("❌ identifyCar 失败: HTTP ${response.code} - $errBody")
+                    null
                 }
-            } catch (e: IOException) {
-                log("❌ identifyCar 异常: ${e.message}")
-                null
             }
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             log("❌ identifyCar 异常: ${e.message}")
             null
         }
     }
 
-    suspend fun pushLogs(maxLines: Int = 200) {
+    suspend fun pushLogs(maxLines: Int = 200): Unit {
         // 检查是否开启日志推送
-        try {
-            val pushLogs = db.configDao().getString("push_logs")
-            if (pushLogs != "true") return
-        } catch (_: Exception) {}
+        val shouldPush = try {
+            db.configDao().getString("push_logs") == "true"
+        } catch (_: Exception) { false }
+        if (!shouldPush) return@pushLogs
 
-        val apiKey = getApiKey() ?: return
+        val apiKey = getApiKey() ?: return@pushLogs
         val baseUrl = getBaseUrl()
         val lines = LogBuffer.getAll().takeLast(maxLines)
-        if (lines.isEmpty()) return
+        if (lines.isEmpty()) return@pushLogs
 
         try {
             val body = gson.toJson(mapOf("logs" to lines))
