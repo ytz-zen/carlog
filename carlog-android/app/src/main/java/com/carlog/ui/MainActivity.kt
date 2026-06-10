@@ -104,7 +104,17 @@ class MainActivity : AppCompatActivity() {
             scope.launch { handleObdToggle(tvObdData) }
         }
 
-        // Settings + Diagnostic nav (bottom bar via navigation if added, or keep as-is)
+        // Settings nav
+        val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
+        btnSettings.setOnClickListener {
+            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+        }
+
+        // Diagnostic nav
+        val btnDiagnostic = findViewById<ImageButton>(R.id.btnDiagnostic)
+        btnDiagnostic.setOnClickListener {
+            startActivity(Intent(this@MainActivity, DiagnosticActivity::class.java))
+        }
     }
 
     private suspend fun checkServer(tv: TextView) {
