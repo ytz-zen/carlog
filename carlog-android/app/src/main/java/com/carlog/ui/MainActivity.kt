@@ -239,10 +239,10 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun identifyCar() {
         val carName = db.configDao().getString("car_name") ?: return
-        val carId = db.configDao().getString("car_id")
-        val tankId = db.configDao().getString("tank_id")
+        val existingCarId = db.configDao().getString("car_id")
+        val existingTankId = db.configDao().getString("tank_id")
         // 如果已有car_id/tank_id，不需要再识别（Settings里已经保存了）
-        if (carId != null && tankId != null) {
+        if (existingCarId != null && existingTankId != null) {
             Log.d("CarLog", "MainActivity: 已有车辆ID，跳过识别")
             return
         }
