@@ -32,6 +32,8 @@ export default function DashboardPage() {
   const [showInit, setShowInit] = useState(false)
   const [initInput, setInitInput] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [cars, setCars] = useState<Car[]>([])
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null)
   const [activeTrip, setActiveTrip] = useState<ActiveTrip | null>(null)
@@ -44,6 +46,16 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
+    setIsClient(true)
+    setSidebarOpen(window.innerWidth > 640)
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setSidebarOpen(true)
+      } else if (window.innerWidth <= 640) {
+        setSidebarOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
     const params = selectedCarId ? `?carId=${selectedCarId}` : ''
     fetch(`/api/dashboard/stats/summary${params}`)
       .then(r => r.ok ? r.json() : null).then(d => { if (d) setSummary(d); setLoading(false) })
@@ -56,14 +68,14 @@ export default function DashboardPage() {
     // 加载车辆列表
     fetch('/api/cars').then(r => r.json()).then(setCars).catch(() => {})
     // 加载活跃行程
-    const params = selectedCarId ? `?carId=${selectedCarId}` : ''
-    fetch(`/api/trips/active${params}`).then(r => r.json()).then(d => {
+    const activeParams = selectedCarId ? `?carId=${selectedCarId}` : ''
+    fetch(`/api/trips/active${activeParams}`).then(r => r.json()).then(d => {
       if (d.trip) setActiveTrip(d.trip)
       else setActiveTrip(null)
     }).catch(() => {})
     // 计时器
     const t = setInterval(() => setElapsed(Date.now()), 1000)
-    return () => clearInterval(t)
+    return () => { clearInterval(t); window.removeEventListener('resize', handleResize) }
   }, [selectedCarId])
 
   const fmtElapsed = (ms: number) => {
@@ -84,7 +96,21 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`} onClick={(e) => {
+        // 平板模式下点击侧边栏空白区域关闭
+        if (window.innerWidth <= 1024 && window.innerWidth > 640 && e.target === e.currentTarget) {
+          setSidebarOpen(false)
+        }
+      }}>
+        {/* Toggle button - 平板模式显示 */}
+        <button 
+          className="sidebar-toggle" 
+          onClick={(e) => { e.stopPropagation(); setSidebarOpen(!sidebarOpen) }}
+          title={sidebarOpen ? "收起" : "展开"}
+        >
+          {sidebarOpen ? '◀' : '▶'}
+        </button>
+        
         <div className="sidebar-logo">
           <h1>🚗 车行记</h1>
           <p>CarLog · 行驶记录</p>
@@ -117,7 +143,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main */}
-      <main className="main-content">
+      <main className={`main-content ${isClient && !sidebarOpen && window.innerWidth <= 1024 ? 'has-sidebar-collapsed' : ''}`}>
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
           <div>

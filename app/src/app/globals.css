@@ -282,19 +282,53 @@ body {
 }
 
 /* 响应式 */
-/* 平板：收缩侧边栏 */
+/* 平板：侧边栏可展开/收起 */
 @media (max-width: 1024px) {
   .sidebar {
+    width: 220px;
+    transition: width 0.2s ease;
+  }
+  .sidebar.collapsed {
     width: 60px;
   }
-  .sidebar-logo h1, .sidebar-logo p, .sidebar-link span {
+  .sidebar.collapsed .sidebar-logo h1,
+  .sidebar.collapsed .sidebar-logo p,
+  .sidebar.collapsed .sidebar-link span {
     display: none;
   }
-  .sidebar-link {
+  .sidebar.collapsed .sidebar-link {
     justify-content: center;
     padding: 12px 8px;
   }
+  .sidebar-toggle {
+    position: absolute;
+    right: -16px;
+    top: 24px;
+    width: 24px;
+    height: 24px;
+    background: var(--primary);
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 60;
+    transition: transform 0.2s ease;
+  }
+  .sidebar.collapsed .sidebar-toggle {
+    transform: rotate(180deg);
+  }
+  .sidebar-toggle:hover {
+    background: var(--primary-dark);
+  }
   .main-content {
+    margin-left: 220px;
+    transition: margin-left 0.2s ease;
+  }
+  .main-content.has-sidebar-collapsed {
     margin-left: 60px;
   }
   .stat-card .value {
