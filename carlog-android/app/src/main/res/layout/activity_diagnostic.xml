@@ -77,6 +77,11 @@
                     android:layout_weight="1" android:text="📋 运行日志"
                     android:textSize="16sp" android:textStyle="bold"
                     android:textColor="#64748b" />
+                <Button android:id="@+id/btnCopyLog" android:layout_width="wrap_content"
+                    android:layout_height="32dp" android:text="复制"
+                    android:textAllCaps="false" android:textSize="11sp"
+                    android:backgroundTint="#475569" android:textColor="#94a3b8"
+                    android:layout_marginEnd="8dp" app:cornerRadius="6dp" />
                 <Button android:id="@+id/btnClearLog" android:layout_width="wrap_content"
                     android:layout_height="32dp" android:text="清空"
                     android:textAllCaps="false" android:textSize="11sp"
@@ -92,7 +97,6 @@
                     android:layout_height="wrap_content" android:text="暂无日志"
                     android:textSize="11sp" android:textColor="#94a3b8"
                     android:typeface="monospace"
-                    android:textIsSelectable="true"
                     android:lineSpacingExtra="2dp" />
             </ScrollView>
         </LinearLayout>

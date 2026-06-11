@@ -161,8 +161,17 @@ class DiagnosticActivity : AppCompatActivity() {
             LogBuffer.clear()
         }
 
-        // 日志滚动
-        tvLog.movementMethod = android.text.method.ScrollingMovementMethod()
+        // 复制日志
+        findViewById<Button>(R.id.btnCopyLog).setOnClickListener {
+            val text = getLogText()
+            if (text.isNotEmpty() && text != "(暂无日志)") {
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("carlog", text))
+                Toast.makeText(this, "✅ 日志已复制", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "暂无日志可复制", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // 定时刷新日志
         scope.launch {
