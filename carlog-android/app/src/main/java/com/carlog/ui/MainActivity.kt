@@ -91,6 +91,7 @@ class MainActivity : AppCompatActivity() {
 
         // Manual start
         btnStart.setOnClickListener {
+            Toast.makeText(this, "⏳ 正在开启行程...", Toast.LENGTH_SHORT).show()
             startForegroundService(Intent(this, GpsTrackService::class.java).apply {
                 action = "com.carlog.FORCE_START"
             })

@@ -47,7 +47,8 @@
             android:src="@android:drawable/ic_menu_rotate"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="刷新"
-            android:scaleType="center" />
+            android:scaleType="center"
+            android:foreground="?attr/selectableItemBackgroundBorderless" />
 
         <ImageButton
             android:id="@+id/btnSettings"
@@ -57,7 +58,8 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="设置"
             android:scaleType="center"
-            android:layout_marginStart="2dp" />
+            android:layout_marginStart="2dp"
+            android:foreground="?attr/selectableItemBackgroundBorderless" />
 
         <ImageButton
             android:id="@+id/btnDiagnostic"
@@ -67,10 +69,11 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="诊断"
             android:scaleType="center"
-            android:layout_marginStart="2dp" />
+            android:layout_marginStart="2dp"
+            android:foreground="?attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
 
-    <!-- 第一行：行程状态 + GPS/OBD -->
+    <!-- 内容区 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -78,7 +81,7 @@
         android:orientation="horizontal"
         android:padding="8dp">
 
-        <!-- 左侧：行程状态 -->
+        <!-- 左侧：行程 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -87,8 +90,7 @@
             android:orientation="vertical"
             android:background="#1e293b"
             android:padding="12dp"
-            android:elevation="2dp"
-            android:gravity="center">
+            android:elevation="2dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -102,43 +104,43 @@
             <TextView
                 android:id="@+id/tvTripMode"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
                 android:text="--"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textColor="#fbbf24"
                 android:textStyle="bold"
-                android:layout_marginBottom="4dp" />
+                android:gravity="center" />
 
             <TextView
                 android:id="@+id/tvTripDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="--"
+                android:text="--:--:--"
                 android:textSize="28sp"
                 android:textColor="#e2e8f0"
                 android:textStyle="bold"
                 android:fontFamily="monospace"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="4dp" />
 
             <TextView
                 android:id="@+id/tvTripPoints"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--"
-                android:textSize="12sp"
-                android:textColor="#94a3b8"
-                android:layout_marginBottom="8dp" />
+                android:textSize="11sp"
+                android:textColor="#94a3b8" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="8dp">
 
                 <Button
                     android:id="@+id/btnStart"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="38dp"
                     android:layout_weight="1"
                     android:text="▶ 开始"
                     android:textAllCaps="false"
@@ -146,12 +148,13 @@
                     android:backgroundTint="#4f46e5"
                     android:textColor="#fff"
                     android:layout_marginEnd="3dp"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cornerRadius="8dp" />
 
                 <Button
                     android:id="@+id/btnStop"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="38dp"
                     android:layout_weight="1"
                     android:text="⏹ 结束"
                     android:textAllCaps="false"
@@ -159,6 +162,7 @@
                     android:backgroundTint="#ef4444"
                     android:textColor="#fff"
                     android:layout_marginStart="3dp"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cornerRadius="8dp" />
             </LinearLayout>
         </LinearLayout>
@@ -172,7 +176,7 @@
             android:orientation="vertical"
             android:weightSum="2">
 
-            <!-- GPS 信息 -->
+            <!-- GPS -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -190,21 +194,21 @@
                     android:textSize="14sp"
                     android:textColor="#64748b"
                     android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="6dp" />
 
                 <TextView
                     android:id="@+id/tvGpsData"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
                     android:text="--"
                     android:textSize="11sp"
                     android:textColor="#cbd5e1"
                     android:fontFamily="monospace"
-                    android:lines="8"
-                    android:ellipsize="end" />
+                    android:gravity="center_vertical" />
             </LinearLayout>
 
-            <!-- OBD 信息 -->
+            <!-- OBD -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -219,7 +223,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="6dp">
 
                     <TextView
                         android:layout_width="0dp"
@@ -234,29 +238,30 @@
                         android:id="@+id/btnObdConnect"
                         android:layout_width="wrap_content"
                         android:layout_height="28dp"
-                        android:text="连接"
+                        android:text="连接 OBD"
                         android:textAllCaps="false"
                         android:textSize="11sp"
                         android:backgroundTint="#0ea5e9"
                         android:textColor="#fff"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cornerRadius="6dp" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvObdData"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="--"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="点击连接按钮\n搜索蓝牙设备..."
                     android:textSize="11sp"
                     android:textColor="#cbd5e1"
                     android:fontFamily="monospace"
-                    android:lines="6"
-                    android:ellipsize="end" />
+                    android:gravity="center_vertical" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 第二行：历史行程 -->
+    <!-- 历史行程 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
