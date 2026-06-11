@@ -117,7 +117,12 @@ class GpsTrackService : Service(), LocationListener {
                 val duration = ((now - active.startTime) / 1000).toInt()
                 log("恢复行程: 里程=${distance}km, 时长=${duration}s")
                 db.tripDao().updateUploadState(active.id, "IDLE")
-                uploadRepo.uploadTrip(active.id, now, distance, avgSpeed, maxSpeed, duration)
+                // 先尝试创建服务端行程
+                val serverId = uploadRepo.initializeTrip()
+                if (!serverId.isNullOrEmpty()) {
+                    db.tripDao().updateServerTripId(active.id, serverId)
+                }
+                uploadRepo.uploadTrip(active.id, now, distance, avgSpeed, maxSpeed, duration, serverId)
                 log("恢复行程完成: ${active.id}")
             }
         }
@@ -253,9 +258,25 @@ class GpsTrackService : Service(), LocationListener {
             db.tripDao().insertTrip(trip)
             currentTripId = trip.id
             pointCount = 0
+            // 立即同步到服务端获取 serverTripId
+            ensureServerTrip(trip.id)
             log("强制创建行程: ${trip.id}")
         }
         updateNotification("手动追踪中")
+    }
+
+    private suspend fun ensureServerTrip(tripId: String) {
+        val trip = db.tripDao().getTripById(tripId) ?: return
+        if (!trip.serverTripId.isNullOrEmpty()) return
+        log("⬆️ 创建服务端行程: $tripId (本地ID)")
+        val serverTripId = uploadRepo.initializeTrip()
+        if (!serverTripId.isNullOrEmpty()) {
+            db.tripDao().updateServerTripId(tripId, serverTripId)
+            db.tripDao().updateUploadState(tripId, "SYNCED")
+            log("✅ 服务端行程已同步: $serverTripId")
+        } else {
+            log("⚠️ 服务端行程创建失败，将用本地ID重试")
+        }
     }
 
     private fun stopTracking() {
@@ -305,7 +326,8 @@ class GpsTrackService : Service(), LocationListener {
 
                 // Upload every 20 points (was 50) to reduce loss on sudden power-off
                 if (pointCount % 20 == 0) {
-                    uploadRepo.uploadPendingPoints(tripId)
+                    val trip = db.tripDao().getTripById(tripId)
+                    uploadRepo.uploadPendingPoints(tripId, trip?.serverTripId)
                 }
 
                 updateNotification("已记录 $pointCount 个点")
@@ -331,6 +353,8 @@ class GpsTrackService : Service(), LocationListener {
                 db.tripDao().insertTrip(trip)
                 currentTripId = trip.id
                 pointCount = 0
+                // 立即同步到服务端获取 serverTripId
+                ensureServerTrip(trip.id)
                 return trip.id
             }
         } else {
@@ -352,6 +376,7 @@ class GpsTrackService : Service(), LocationListener {
         tripDetector = TripDetector()
         pointCount = 0
         val points = db.tripDao().getGpsPoints(tripId)
+        val trip = db.tripDao().getTripById(tripId)
         var distance = 0f; var maxSpeed = 0f; var totalSpeed = 0f; var speedCount = 0
         for (i in 1 until points.size) {
             distance += haversine(points[i-1].latitude, points[i-1].longitude,
@@ -363,8 +388,8 @@ class GpsTrackService : Service(), LocationListener {
         val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
         val duration = ((endTime - db.tripDao().getTripById(tripId)!!.startTime) / 1000).toInt()
         // 本地数据库标记行程已结束
-        db.tripDao().endTripLocally(tripId, endTime, duration, distance, points.size)
-        uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration)
+        db.tripDao().endTripLocally(tripId, endTime, duration, distance, points.size, trip?.serverTripId)
+        uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration, trip?.serverTripId)
         updateNotification("行程结束: ${distance}km, ${duration}s")
     }
 

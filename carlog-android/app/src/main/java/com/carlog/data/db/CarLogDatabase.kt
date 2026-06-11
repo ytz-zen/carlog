@@ -12,8 +12,14 @@ interface TripDao {
     @Query("UPDATE trips SET uploadState = :state WHERE id = :tripId")
     suspend fun updateUploadState(tripId: String, state: String)
 
-    @Query("UPDATE trips SET endTime = :endTime, duration = :duration, distance = :distance, pointCount = :pointCount, uploadState = 'ENDED' WHERE id = :tripId")
-    suspend fun endTripLocally(tripId: String, endTime: Long, duration: Int, distance: Float, pointCount: Int)
+    @Query("UPDATE trips SET serverTripId = :serverTripId WHERE id = :tripId")
+    suspend fun updateServerTripId(tripId: String, serverTripId: String)
+
+    @Query("UPDATE trips SET endTime = :endTime, duration = :duration, distance = :distance, pointCount = :pointCount, uploadState = 'ENDED', serverTripId = :serverTripId WHERE id = :tripId")
+    suspend fun endTripLocally(tripId: String, endTime: Long, duration: Int, distance: Float, pointCount: Int, serverTripId: String? = null)
+
+    @Query("SELECT * FROM trips WHERE serverTripId = :serverTripId LIMIT 1")
+    suspend fun getTripByServerId(serverTripId: String): TripEntity?
 
     @Query("SELECT * FROM trips WHERE id = :tripId LIMIT 1")
     suspend fun getTripById(tripId: String): TripEntity?
@@ -43,7 +49,7 @@ interface TripDao {
     suspend fun getUploadedPointCount(tripId: String): Int
 
     @Query("UPDATE gps_points SET uploaded = 1 WHERE id IN (:pointIds)")
-    suspend fun markPointsUploaded(pointIds: List<String>)
+    suspend fun markPointsUploaded(pointIds: List<Long>)
 }
 
 @Dao
@@ -69,7 +75,8 @@ data class TripEntity(
     val fuelConsumed: Float? = null,
     val fuelPer100km: Float? = null,
     val pointCount: Int = 0,
-    val uploadState: String = "IDLE"
+    val uploadState: String = "IDLE",
+    val serverTripId: String? = null
 )
 
 @Entity(tableName = "gps_points")

@@ -35,7 +35,7 @@ class UploadRepo(
         LogBuffer.add("UPLOAD", msg)
     }
 
-    suspend fun uploadPendingPoints(tripId: String) {
+    suspend fun uploadPendingPoints(localTripId: String, serverTripId: String? = null) {
         try {
             val apiKey = getApiKey()
             if (apiKey == null) {
@@ -43,9 +43,9 @@ class UploadRepo(
                 return
             }
             val baseUrl = getBaseUrl()
-            log("⬆️ 准备上传 $tripId 的GPS点到 $baseUrl")
+            log("⬆️ 准备上传 $localTripId 的GPS点到 $baseUrl")
             
-            val pending = db.tripDao().getGpsPoints(tripId).filter { !it.uploaded }.take(50)
+            val pending = db.tripDao().getGpsPoints(localTripId).filter { !it.uploaded }.take(50)
             log("⬆️ 待上传点数: ${pending.size}")
             if (pending.isEmpty()) return
 
@@ -54,7 +54,9 @@ class UploadRepo(
                       "speed" to p.speed, "fuelLevel" to p.fuelLevel)
             }
 
-            val body = gson.toJson(mapOf("action" to "upload-points", "tripId" to tripId, "points" to points))
+            // HTTP body 用 serverTripId，查不到则 fallback 到 localTripId
+            val uploadTripId = serverTripId ?: localTripId
+            val body = gson.toJson(mapOf("action" to "upload-points", "tripId" to uploadTripId, "points" to points))
             val request = Request.Builder()
                 .url("$baseUrl/api/trips")
                 .header(HEADER_API_KEY, apiKey)
@@ -72,6 +74,16 @@ class UploadRepo(
                     } else {
                         val errBody = response.body?.string() ?: "(无body)"
                         log("❌ 上传失败: HTTP ${response.code} - $errBody")
+                        // 如果 serverTripId 不存在，可能是服务端行程未创建，尝试先创建
+                        if (response.code == 404 && serverTripId.isNullOrEmpty()) {
+                            log("⚠️ 服务端行程不存在，尝试创建...")
+                            val createdServerId = initializeTrip()
+                            if (!createdServerId.isNullOrEmpty()) {
+                                log("✅ 服务端行程创建成功: $createdServerId，重试上传")
+                                uploadPendingPoints(localTripId, createdServerId)
+                                return
+                            }
+                        }
                     }
                 }
             } catch (e: IOException) {
@@ -82,12 +94,13 @@ class UploadRepo(
         }
     }
 
-    suspend fun uploadTrip(tripId: String, endTime: Long, distance: Float, avgSpeed: Float, maxSpeed: Float, duration: Int) {
+    suspend fun uploadTrip(localTripId: String, endTime: Long, distance: Float, avgSpeed: Float, maxSpeed: Float, duration: Int, serverTripId: String? = null) {
         try {
             val apiKey = getApiKey() ?: return
             val baseUrl = getBaseUrl()
-            log("⬆️ 上传行程结束: $tripId")
-            val body = gson.toJson(mapOf("action" to "end", "tripId" to tripId, "endTime" to endTime,
+            val uploadTripId = serverTripId ?: localTripId
+            log("⬆️ 上传行程结束: $localTripId → 服务端: $uploadTripId")
+            val body = gson.toJson(mapOf("action" to "end", "tripId" to uploadTripId, "endTime" to endTime,
                 "distance" to distance, "avgSpeed" to avgSpeed, "maxSpeed" to maxSpeed, "duration" to duration))
 
             val request = Request.Builder()
@@ -101,16 +114,26 @@ class UploadRepo(
                     val respBody = response.body?.string() ?: ""
                     log("⬆️ 行程结束响应: code=${response.code}")
                     if (response.isSuccessful) {
-                        db.tripDao().updateUploadState(tripId, "DONE")
-                        log("✅ 行程结束上传成功: $tripId")
+                        db.tripDao().updateUploadState(localTripId, "DONE")
+                        log("✅ 行程结束上传成功: $localTripId")
                     } else {
                         log("❌ 行程结束失败: HTTP ${response.code} - $respBody")
-                        db.tripDao().updateUploadState(tripId, "FAILED")
+                        db.tripDao().updateUploadState(localTripId, "FAILED")
+                        // 同样处理 404 情况
+                        if (response.code == 404 && serverTripId.isNullOrEmpty()) {
+                            log("⚠️ 服务端行程不存在，尝试创建...")
+                            val createdServerId = initializeTrip()
+                            if (!createdServerId.isNullOrEmpty()) {
+                                log("✅ 服务端行程创建成功: $createdServerId，重试结束行程")
+                                uploadTrip(localTripId, endTime, distance, avgSpeed, maxSpeed, duration, createdServerId)
+                                return
+                            }
+                        }
                     }
                 }
             } catch (e: IOException) {
                 log("❌ 行程结束异常: ${e.message}")
-                db.tripDao().updateUploadState(tripId, "FAILED")
+                db.tripDao().updateUploadState(localTripId, "FAILED")
             }
         } catch (e: Exception) {
             log("❌ uploadTrip 异常: ${e.message}")
