@@ -83,7 +83,7 @@
                     android:backgroundTint="#334155" android:textColor="#94a3b8"
                     app:cornerRadius="6dp" />
             </LinearLayout>
-            <ScrollView android:layout_width="match_parent"
+            <ScrollView android:id="@+id/logScrollView" android:layout_width="match_parent"
                 android:layout_height="200dp"
                 android:background="#0f172a" android:padding="8dp"
                 android:fadingEdgeLength="8dp"
@@ -92,6 +92,7 @@
                     android:layout_height="wrap_content" android:text="暂无日志"
                     android:textSize="11sp" android:textColor="#94a3b8"
                     android:typeface="monospace"
+                    android:textIsSelectable="true"
                     android:lineSpacingExtra="2dp" />
             </ScrollView>
         </LinearLayout>

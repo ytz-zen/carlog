@@ -13,6 +13,7 @@ import kotlinx.coroutines.*
 class DiagnosticActivity : AppCompatActivity() {
     private lateinit var db: CarLogDatabase
     private lateinit var uploadRepo: UploadRepo
+    private lateinit var logScrollView: ScrollView
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val gson = Gson()
 
@@ -22,6 +23,7 @@ class DiagnosticActivity : AppCompatActivity() {
         setContentView(R.layout.activity_diagnostic)
         db = CarLogDatabase.getInstance(this)
         uploadRepo = UploadRepo(this, db)
+        logScrollView = findViewById(R.id.logScrollView)
 
         val tvConfig = findViewById<TextView>(R.id.diagConfigInfo)
         val tvDb = findViewById<TextView>(R.id.diagDbInfo)
@@ -224,14 +226,20 @@ class DiagnosticActivity : AppCompatActivity() {
     private fun addLog(tv: TextView, msg: String) {
         LogBuffer.add("DIAG", msg)
         tv.text = getLogText()
-        tv.post { tv.postInvalidate() }
+        tv.post {
+            logScrollView.fullScroll(ScrollView.FOCUS_DOWN)
+            tv.postInvalidate()
+        }
     }
 
     private fun refreshLog(tv: TextView) {
         val log = getLogText()
         if (log != tv.text.toString()) {
             tv.text = log
-            tv.post { tv.postInvalidate() }
+            tv.post {
+                logScrollView.fullScroll(ScrollView.FOCUS_DOWN)
+                tv.postInvalidate()
+            }
         }
     }
 
