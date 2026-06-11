@@ -190,6 +190,11 @@ class UploadRepo(
                     log("⬆️ 开始行程响应体: $respBody")
                     val map = gson.fromJson(respBody, Map::class.java)
                     map["tripId"] as? String
+                } else if (response.code == 409) {
+                    // 服务端已有活跃行程，复用其 tripId
+                    log("⚠️ 服务端已有活跃行程，复用: $respBody")
+                    val map = gson.fromJson(respBody, Map::class.java)
+                    map["tripId"] as? String
                 } else {
                     log("❌ 开始行程失败: HTTP ${response.code} - $respBody")
                     null
