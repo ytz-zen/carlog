@@ -29,7 +29,10 @@ class UploadRepo(
     private val gson = Gson()
 
     private fun getApiKey(): String? = runBlocking { db.configDao().getString("api_key") }
-    private fun getBaseUrl(): String = runBlocking { db.configDao().getString("server_url") } ?: "http://192.168.5.193:3012"
+    private fun getBaseUrl(): String {
+        val url = runBlocking { db.configDao().getString("server_url") } ?: "http://192.168.5.193:3012"
+        return url.trimEnd('/')
+    }
 
     private fun log(msg: String) {
         LogBuffer.add("UPLOAD", msg)
