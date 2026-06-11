@@ -133,7 +133,7 @@ class GpsTrackService : Service(), LocationListener {
             for (t in trips) {
                 if (t.uploadState != "DONE") {
                     val remaining = db.tripDao().getPendingPointCount(t.id)
-                    if (remaining > 0) uploadRepo.uploadPendingPoints(t.id)
+                    if (remaining > 0) uploadRepo.uploadPendingPoints(t.id, t.serverTripId)
                 }
             }
         }

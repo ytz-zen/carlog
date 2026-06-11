@@ -80,6 +80,7 @@ class UploadRepo(
                             val createdServerId = initializeTrip()
                             if (!createdServerId.isNullOrEmpty()) {
                                 log("✅ 服务端行程创建成功: $createdServerId，重试上传")
+                                db.tripDao().updateServerTripId(localTripId, createdServerId)
                                 uploadPendingPoints(localTripId, createdServerId)
                                 return
                             }
@@ -125,6 +126,7 @@ class UploadRepo(
                             val createdServerId = initializeTrip()
                             if (!createdServerId.isNullOrEmpty()) {
                                 log("✅ 服务端行程创建成功: $createdServerId，重试结束行程")
+                                db.tripDao().updateServerTripId(localTripId, createdServerId)
                                 uploadTrip(localTripId, endTime, distance, avgSpeed, maxSpeed, duration, createdServerId)
                                 return
                             }

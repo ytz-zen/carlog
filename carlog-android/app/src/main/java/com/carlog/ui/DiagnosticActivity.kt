@@ -80,9 +80,23 @@ class DiagnosticActivity : AppCompatActivity() {
                 val active = db.tripDao().getActiveTrip()
                 if (active != null && active.endTime == null) {
                     val pending = db.tripDao().getPendingPointCount(active.id)
+                    val serverTripId = active.serverTripId
                     addLog(tvLog, "📍 当前行程 ${pending} 个未上传GPS点")
+                    addLog(tvLog, "📍 服务端行程ID: ${serverTripId ?: "(无)"}")
                     if (pending > 0) {
-                        uploadRepo.uploadPendingPoints(active.id)
+                        if (serverTripId.isNullOrEmpty()) {
+                            addLog(tvLog, "⚠️ 无服务端行程ID，先创建...")
+                            val created = uploadRepo.initializeTrip()
+                            if (!created.isNullOrEmpty()) {
+                                db.tripDao().updateServerTripId(active.id, created)
+                                addLog(tvLog, "✅ 服务端行程已创建: $created")
+                                uploadRepo.uploadPendingPoints(active.id, created)
+                            } else {
+                                addLog(tvLog, "❌ 服务端行程创建失败")
+                            }
+                        } else {
+                            uploadRepo.uploadPendingPoints(active.id, serverTripId)
+                        }
                         addLog(tvLog, "⬆️ 已尝试上传 $pending 个点")
                     } else {
                         addLog(tvLog, "ℹ️ 当前行程无待上传的点")
@@ -209,16 +223,21 @@ class DiagnosticActivity : AppCompatActivity() {
 
     private fun addLog(tv: TextView, msg: String) {
         LogBuffer.add("DIAG", msg)
-        tv.text = LogBuffer.getAll().joinToString("\n")
-        tv.post { tv.scrollTo(0, tv.bottom) }
+        tv.text = getLogText()
+        tv.post { tv.postInvalidate() }
     }
 
     private fun refreshLog(tv: TextView) {
-        val log = LogBuffer.getAll().joinToString("\n")
+        val log = getLogText()
         if (log != tv.text.toString()) {
             tv.text = log
-            tv.post { tv.scrollTo(0, tv.bottom) }
+            tv.post { tv.postInvalidate() }
         }
+    }
+
+    private fun getLogText(): String {
+        val lines = LogBuffer.getAll()
+        return if (lines.isNullOrEmpty()) "(暂无日志)" else lines.joinToString("\n")
     }
 
     override fun onDestroy() {
