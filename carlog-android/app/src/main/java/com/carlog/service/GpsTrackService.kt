@@ -245,10 +245,10 @@ class GpsTrackService : Service(), LocationListener {
 
     /** 手动强制创建行程 */
     private fun forceCreateTrip() {
-        runBlocking {
+        serviceScope.launch {
             if (currentTripId != null) {
                 log("强制创建跳过: 已有行程 $currentTripId")
-                return@runBlocking
+                return@launch
             }
             val trip = TripEntity(
                 id = "trip_${System.currentTimeMillis()}",
@@ -386,7 +386,12 @@ class GpsTrackService : Service(), LocationListener {
         }
         distance = round(distance * 10) / 10
         val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
-        val duration = ((endTime - db.tripDao().getTripById(tripId)!!.startTime) / 1000).toInt()
+        val duration = if (trip != null) {
+            ((endTime - trip.startTime) / 1000).toInt()
+        } else {
+            log("⚠️ getTripById 返回 null，无法计算时长")
+            0
+        }
         // 本地数据库标记行程已结束
         db.tripDao().endTripLocally(tripId, endTime, duration, distance, points.size, trip?.serverTripId)
         uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration, trip?.serverTripId)
