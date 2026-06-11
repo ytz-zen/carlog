@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
 import java.text.SimpleDateFormat
-import java.util.Locale
+import java.util.*
 
 class HistoryTripAdapter(
     private val ctx: Context,
@@ -15,10 +15,24 @@ class HistoryTripAdapter(
 ) : BaseAdapter() {
 
     private val dateFormat = SimpleDateFormat("MM/dd HH:mm", Locale.CHINA)
+    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
 
     override fun getCount() = trips.size
     override fun getItem(position: Int) = trips[position]
     override fun getItemId(position: Int) = position.toLong()
+
+    private fun parseTime(timeStr: String?): Long {
+        if (timeStr.isNullOrEmpty()) return 0L
+        return try {
+            timeStr.toLong()
+        } catch (_: NumberFormatException) {
+            try {
+                // Try ISO format (2026-06-10T21:24:05.000Z)
+                val clean = timeStr.substringBefore(".").substringBefore("Z")
+                isoFormat.parse(clean)?.time ?: 0L
+            } catch (_: Exception) { 0L }
+        }
+    }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val view = convertView ?: LayoutInflater.from(ctx)
@@ -29,9 +43,9 @@ class HistoryTripAdapter(
         val tvDuration = view.findViewById<TextView>(com.carlog.R.id.tvTripDuration)
         val tvDistance = view.findViewById<TextView>(com.carlog.R.id.tvTripDistance)
 
-        val start = dateFormat.format(java.util.Date(trip.startTime.toLong()))
+        val start = dateFormat.format(Date(parseTime(trip.startTime)))
         val end = trip.endTime?.let {
-            if (it.isNotEmpty()) " - " + dateFormat.format(java.util.Date(it.toLong())) else ""
+            if (it.isNotEmpty()) " - " + dateFormat.format(Date(parseTime(it))) else ""
         } ?: ""
         tvTime.text = start + end
 
