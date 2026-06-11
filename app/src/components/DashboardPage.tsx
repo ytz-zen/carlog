@@ -152,9 +152,10 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             {/* 车辆切换下拉 */}
-            {cars.length > 1 && (
+            {cars.length > 0 && (
               <select value={selectedCarId || ''} onChange={e => setSelectedCarId(e.target.value || null)}
                 className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
+                <option value="">{cars.length > 1 ? '全部车辆' : cars[0]?.name || '选择车辆'}</option>
                 {cars.map(c => (
                   <option key={c.id} value={c.id}>{c.name}{c.isOnline ? ' 🟢' : ''}</option>
                 ))}
@@ -270,11 +271,11 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="chart-card">
               <h2>🚙 最近行程</h2>
-              <TripList limit={8} />
+              <TripList limit={8} carId={selectedCarId} />
             </div>
             <div className="chart-card">
               <h2>⛽ 最近加油</h2>
-              <FuelLog limit={8} />
+              <FuelLog limit={8} carId={selectedCarId} />
             </div>
           </div>
         </div>

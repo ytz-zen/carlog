@@ -7,15 +7,16 @@ interface Trip {
   fuelConsumed: number | null; fuelPer100km: number | null; tankName: string
 }
 
-export default function TripList({ limit = 20 }: { limit?: number }) {
+export default function TripList({ limit = 20, carId }: { limit?: number; carId?: string | null }) {
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/dashboard/trips?size=${limit}`)
+    const params = carId ? `&carId=${carId}` : ''
+    fetch(`/api/dashboard/trips?size=${limit}${params}`)
       .then(r => r.json()).then(d => { setTrips(d.trips || []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [limit])
+  }, [limit, carId])
 
   if (loading) return <div className="text-center py-8 text-gray-400">加载中...</div>
   if (trips.length === 0) return <div className="text-center py-8 text-gray-400">暂无行程记录</div>

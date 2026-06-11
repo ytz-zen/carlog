@@ -8,19 +8,29 @@ interface Trip {
   distance: number | null; duration: number | null
   avgSpeed: number | null; maxSpeed: number | null
   fuelConsumed: number | null; fuelPer100km: number | null
-  tank: { name: string }
+  tankName: string; carName: string
 }
+
+interface Car { id: string; name: string; isOnline: boolean }
 
 export default function TripsPage() {
   const router = useRouter()
   const [trips, setTrips] = useState<Trip[]>([])
+  const [cars, setCars] = useState<Car[]>([])
+  const [selectedCarId, setSelectedCarId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/dashboard/trips?size=50', { headers: { 'X-API-Key': 'carlog_dev_key_2026' } })
+    fetch('/api/cars').then(r => r.json()).then(setCars).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    setLoading(true)
+    const params = selectedCarId ? `&carId=${selectedCarId}` : ''
+    fetch(`/api/dashboard/trips?size=50${params}`, { headers: { 'X-API-Key': 'carlog_dev_key_2026' } })
       .then(r => r.json()).then(d => { setTrips(d.trips || []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [selectedCarId])
 
   const fmt = (sec: number | null) => {
     if (!sec) return '-'
@@ -33,6 +43,15 @@ export default function TripsPage() {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3">
         <button onClick={() => router.push('/')} className="text-indigo-600 hover:text-indigo-800 text-lg">&larr;</button>
         <h1 className="text-lg font-semibold text-slate-800">🚗 行程记录</h1>
+        {cars.length > 0 && (
+          <select value={selectedCarId || ''} onChange={e => setSelectedCarId(e.target.value || null)}
+            className="ml-auto text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
+            <option value="">{cars.length > 1 ? '全部车辆' : cars[0]?.name || '选择车辆'}</option>
+            {cars.map(c => (
+              <option key={c.id} value={c.id}>{c.name}{c.isOnline ? ' 🟢' : ''}</option>
+            ))}
+          </select>
+        )}
       </header>
       <main className="max-w-4xl mx-auto p-4 sm:p-6">
         {loading ? (
@@ -44,7 +63,7 @@ export default function TripsPage() {
             <p className="text-xs text-slate-400 mt-1">连接车辆后会自动记录行驶轨迹</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b bg-slate-50 text-slate-400 text-xs">
                 <th className="py-3 px-4 text-left">时间</th>
@@ -52,6 +71,9 @@ export default function TripsPage() {
                 <th className="py-3 px-4 text-right">时长</th>
                 <th className="py-3 px-4 text-right">均速</th>
                 <th className="py-3 px-4 text-right">油耗</th>
+                {!selectedCarId && cars.length > 1 && (
+                  <th className="py-3 px-4 text-left">车辆</th>
+                )}
                 <th className="py-3 px-4 text-center">轨迹</th>
               </tr></thead>
               <tbody>
@@ -65,6 +87,9 @@ export default function TripsPage() {
                     <td className="py-3 px-4 text-right text-slate-600">{t.duration !== null ? fmt(t.duration) : '-'}</td>
                     <td className="py-3 px-4 text-right text-slate-600">{t.avgSpeed !== null ? `${t.avgSpeed} km/h` : '-'}</td>
                     <td className="py-3 px-4 text-right text-emerald-600">{t.fuelConsumed !== null ? `${t.fuelConsumed} L` : '-'}</td>
+                    {!selectedCarId && cars.length > 1 && (
+                      <td className="py-3 px-4 text-left text-slate-500 text-xs">{t.carName}</td>
+                    )}
                     <td className="py-3 px-4 text-center">
                       <a href={`/trip/${t.id}`} className="text-indigo-500 hover:text-indigo-700 text-xs hover:underline">查看轨迹</a>
                     </td>

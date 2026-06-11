@@ -6,15 +6,16 @@ interface FuelEvent {
   fuelAdded: number; odometer: number | null; isManual: boolean; note: string | null; totalPrice: number | null
 }
 
-export default function FuelLog({ limit = 20 }: { limit?: number }) {
+export default function FuelLog({ limit = 20, carId }: { limit?: number; carId?: string | null }) {
   const [events, setEvents] = useState<FuelEvent[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/fuel?size=${limit}`)
+    const params = carId ? `&carId=${carId}` : ''
+    fetch(`/api/fuel?size=${limit}${params}`)
       .then(r => r.json()).then(d => { setEvents(d.events || []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [limit])
+  }, [limit, carId])
 
   if (loading) return <div className="text-center py-8 text-gray-400">加载中...</div>
   if (events.length === 0) return <div className="text-center py-8 text-gray-400">暂无加油记录</div>

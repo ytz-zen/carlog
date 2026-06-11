@@ -6,13 +6,17 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1')
   const size = parseInt(searchParams.get('size') || '50')
+  const carId = searchParams.get('carId') || undefined
+
+  const where: Record<string, any> = {}
+  if (carId) where.carId = carId
 
   const [events, total] = await Promise.all([
     prisma.fuelEvent.findMany({
-      where: {}, orderBy: { timestamp: 'desc' }, skip: (page-1)*size, take: size,
+      where, orderBy: { timestamp: 'desc' }, skip: (page-1)*size, take: size,
       include: { tank: { select: { capacity: true, name: true } } }
     }),
-    prisma.fuelEvent.count()
+    prisma.fuelEvent.count({ where })
   ])
 
   return NextResponse.json({
