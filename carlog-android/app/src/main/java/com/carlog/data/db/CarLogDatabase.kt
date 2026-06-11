@@ -41,6 +41,9 @@ interface TripDao {
 
     @Query("SELECT COUNT(*) FROM gps_points WHERE tripId = :tripId AND uploaded = 1")
     suspend fun getUploadedPointCount(tripId: String): Int
+
+    @Query("UPDATE gps_points SET uploaded = 1 WHERE id IN (:pointIds)")
+    suspend fun markPointsUploaded(pointIds: List<String>)
 }
 
 @Dao

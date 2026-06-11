@@ -67,6 +67,8 @@ class UploadRepo(
                     if (response.isSuccessful) {
                         val respBody = response.body?.string() ?: ""
                         log("⬆️ 上传成功: $respBody")
+                        // 标记已上传
+                        db.tripDao().markPointsUploaded(pending.map { it.id })
                     } else {
                         val errBody = response.body?.string() ?: "(无body)"
                         log("❌ 上传失败: HTTP ${response.code} - $errBody")
