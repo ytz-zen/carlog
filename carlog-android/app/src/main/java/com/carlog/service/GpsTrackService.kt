@@ -53,6 +53,14 @@ class GpsTrackService : Service(), LocationListener {
 
     override fun onCreate() {
         super.onCreate()
+        // 全局未捕获异常日志
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            val msg = throwable.message ?: "unknown"
+            android.util.Log.e("CarLog-Crash", "全局崩溃: thread=${thread.name} msg=$msg", throwable)
+            try {
+                com.carlog.tracker.LogBuffer.add("CRASH", "全局崩溃: $msg")
+            } catch (_: Exception) {}
+        }
         log("💾 Service onCreate 开始")
         try {
             db = CarLogDatabase.getInstance(this)
@@ -209,20 +217,30 @@ class GpsTrackService : Service(), LocationListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_START -> startTracking()
-            ACTION_FORCE_START -> {
-                startTracking()
-                forceCreateTrip()
+        try {
+            when (intent?.action) {
+                ACTION_START -> startTracking()
+                ACTION_FORCE_START -> {
+                    startTracking()
+                    forceCreateTrip()
+                }
+                ACTION_STOP -> stopTracking()
             }
-            ACTION_STOP -> stopTracking()
+        } catch (e: Exception) {
+            log("💥 onStartCommand 异常: ${e.message}")
+            android.util.Log.e("CarLog-Crash", "onStartCommand", e)
         }
         return START_NOT_STICKY
     }
 
     private fun startTracking() {
         log("startTracking 被调用(自动模式)")
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val lm = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        if (lm == null) {
+            log("❌ LocationManager 不可用")
+            return
+        }
+        locationManager = lm
         tripDetector = TripDetector()
         runBlocking {
             tankCapacity = db.configDao().getString("tank_capacity")?.toFloatOrNull() ?: 60f
@@ -291,56 +309,61 @@ class GpsTrackService : Service(), LocationListener {
     }
 
     override fun onLocationChanged(location: Location) {
-        val speedKmh = location.speed * 3.6f
-        val currentFuel = readFuelLevel()
-        log("GPS定位: speed=${Math.round(speedKmh)}km/h, lat=${location.latitude}, lng=${location.longitude}")
+        try {
+            val speedKmh = location.speed * 3.6f
+            val currentFuel = readFuelLevel()
+            log("GPS定位: speed=${Math.round(speedKmh)}km/h, lat=${location.latitude}, lng=${location.longitude}")
 
-        serviceScope.launch {
-            try {
-                val tripId = handleTripState(speedKmh, location.time)
-                if (tripId != null) {
-                    val point = GpsPointEntity(
-                        tripId = tripId, timestamp = location.time,
-                        latitude = location.latitude, longitude = location.longitude,
-                        speed = speedKmh, altitude = location.altitude?.toFloat(),
-                        bearing = location.bearing?.toFloat(), fuelLevel = currentFuel
-                    )
-                    db.tripDao().insertGpsPoints(listOf(point))
-                    pointCount++
+            serviceScope.launch {
+                try {
+                    val tripId = handleTripState(speedKmh, location.time)
+                    if (tripId != null) {
+                        val point = GpsPointEntity(
+                            tripId = tripId, timestamp = location.time,
+                            latitude = location.latitude, longitude = location.longitude,
+                            speed = speedKmh, altitude = location.altitude?.toFloat(),
+                            bearing = location.bearing?.toFloat(), fuelLevel = currentFuel
+                        )
+                        db.tripDao().insertGpsPoints(listOf(point))
+                        pointCount++
 
-                    // Fuel detection
-                    currentFuel?.let { fuel ->
-                        lastFuelLevel?.let { last ->
-                            val diff = fuel - last
-                            if (diff > 10f) {
-                                val fuelAdded = tankCapacity * diff / 100f
-                                uploadRepo.uploadFuelEvent(
-                                    FuelEvent(fuelBefore = last, fuelAfter = fuel,
-                                        fuelAdded = round(fuelAdded * 10) / 10f, timestamp = location.time
-                                    ), tripId
-                                )
-                                withContext(Dispatchers.Main) {
-                                    updateNotification("加油检测: +${String.format("%.1f", fuelAdded)}L")
+                        // Fuel detection
+                        currentFuel?.let { fuel ->
+                            lastFuelLevel?.let { last ->
+                                val diff = fuel - last
+                                if (diff > 10f) {
+                                    val fuelAdded = tankCapacity * diff / 100f
+                                    uploadRepo.uploadFuelEvent(
+                                        FuelEvent(fuelBefore = last, fuelAfter = fuel,
+                                            fuelAdded = round(fuelAdded * 10) / 10f, timestamp = location.time
+                                        ), tripId
+                                    )
+                                    withContext(Dispatchers.Main) {
+                                        updateNotification("加油检测: +${String.format("%.1f", fuelAdded)}L")
+                                    }
                                 }
                             }
+                            lastFuelLevel = fuel
                         }
-                        lastFuelLevel = fuel
-                    }
 
-                    // Upload every 20 points (was 50) to reduce loss on sudden power-off
-                    if (pointCount % 20 == 0) {
-                        val trip = db.tripDao().getTripById(tripId)
-                        uploadRepo.uploadPendingPoints(tripId, trip?.serverTripId)
-                    }
+                        // Upload every 20 points (was 50) to reduce loss on sudden power-off
+                        if (pointCount % 20 == 0) {
+                            val trip = db.tripDao().getTripById(tripId)
+                            uploadRepo.uploadPendingPoints(tripId, trip?.serverTripId)
+                        }
 
-                    withContext(Dispatchers.Main) {
-                        updateNotification("已记录 $pointCount 个点")
+                        withContext(Dispatchers.Main) {
+                            updateNotification("已记录 $pointCount 个点")
+                        }
                     }
+                } catch (e: Exception) {
+                    log("💥 onLocationChanged 协程异常: ${e.message}")
+                    android.util.Log.e("CarLog-Crash", "onLocationChanged-coroutine", e)
                 }
-            } catch (e: Exception) {
-                log("💥 onLocationChanged 协程崩溃: ${e.message}")
-                android.util.Log.e("CarLog-Crash", "onLocationChanged", e)
             }
+        } catch (e: Exception) {
+            log("💥 onLocationChanged 主线程异常: ${e.message}")
+            android.util.Log.e("CarLog-Crash", "onLocationChanged-main", e)
         }
     }
 

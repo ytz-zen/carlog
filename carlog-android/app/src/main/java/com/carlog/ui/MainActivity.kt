@@ -49,10 +49,10 @@ class MainActivity : AppCompatActivity() {
         // Periodic refresh every 5s
         scope.launch {
             while (isActive) {
-                checkServer(tvServer)
-                checkGps(tvGps, tvGpsData)
-                checkTripStatus(tvTripMode, tvTripDuration, tvTripPoints, btnStart)
-                loadHistoryTrips(lvHistory)
+                try { checkServer(tvServer) } catch (e: Exception) { Log.e("CarLog", "checkServer", e) }
+                try { checkGps(tvGps, tvGpsData) } catch (e: Exception) { Log.e("CarLog", "checkGps", e) }
+                try { checkTripStatus(tvTripMode, tvTripDuration, tvTripPoints, btnStart) } catch (e: Exception) { Log.e("CarLog", "checkTripStatus", e) }
+                try { loadHistoryTrips(lvHistory) } catch (e: Exception) { Log.e("CarLog", "loadHistoryTrips", e) }
                 delay(5000)
             }
         }
@@ -72,17 +72,21 @@ class MainActivity : AppCompatActivity() {
 
         // Auto start tracking
         scope.launch {
-            checkServer(tvServer)
-            checkGps(tvGps, tvGpsData)
-            // 从本地读取已识别的车辆信息
-            val carId = db.configDao().getString("car_id")
-            val carName = db.configDao().getString("car_name")
-            if (carId != null) {
-                tvServer.text = "✅ 服务器已连接 | 车辆: $carName"
+            try {
+                checkServer(tvServer)
+                checkGps(tvGps, tvGpsData)
+                // 从本地读取已识别的车辆信息
+                val carId = db.configDao().getString("car_id")
+                val carName = db.configDao().getString("car_name")
+                if (carId != null) {
+                    tvServer.text = "✅ 服务器已连接 | 车辆: $carName"
+                }
+                startForegroundService(Intent(this@MainActivity, GpsTrackService::class.java).apply {
+                    action = "com.carlog.START_TRACKING"
+                })
+            } catch (e: Exception) {
+                Log.e("CarLog", "Auto start error", e)
             }
-            startForegroundService(Intent(this@MainActivity, GpsTrackService::class.java).apply {
-                action = "com.carlog.START_TRACKING"
-            })
         }
 
         // Manual start
