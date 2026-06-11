@@ -51,7 +51,9 @@ class SettingsActivity : AppCompatActivity() {
                 if (name.isNotEmpty() && key.isNotEmpty()) {
                     try {
                         val uploadRepo = com.carlog.repo.UploadRepo(this@SettingsActivity, db)
-                        val result = uploadRepo.identifyCar(name)
+                        val result = withContext(Dispatchers.IO) {
+                            uploadRepo.identifyCar(name)
+                        }
                         if (result != null) {
                             db.configDao().saveString("car_id", result.carId)
                             db.configDao().saveString("tank_id", result.tankId)
