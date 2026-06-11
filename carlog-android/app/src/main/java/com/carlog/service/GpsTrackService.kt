@@ -296,41 +296,50 @@ class GpsTrackService : Service(), LocationListener {
         log("GPS定位: speed=${Math.round(speedKmh)}km/h, lat=${location.latitude}, lng=${location.longitude}")
 
         serviceScope.launch {
-            val tripId = handleTripState(speedKmh, location.time)
-            if (tripId != null) {
-                val point = GpsPointEntity(
-                    tripId = tripId, timestamp = location.time,
-                    latitude = location.latitude, longitude = location.longitude,
-                    speed = speedKmh, altitude = location.altitude?.toFloat(),
-                    bearing = location.bearing?.toFloat(), fuelLevel = currentFuel
-                )
-                db.tripDao().insertGpsPoints(listOf(point))
-                pointCount++
+            try {
+                val tripId = handleTripState(speedKmh, location.time)
+                if (tripId != null) {
+                    val point = GpsPointEntity(
+                        tripId = tripId, timestamp = location.time,
+                        latitude = location.latitude, longitude = location.longitude,
+                        speed = speedKmh, altitude = location.altitude?.toFloat(),
+                        bearing = location.bearing?.toFloat(), fuelLevel = currentFuel
+                    )
+                    db.tripDao().insertGpsPoints(listOf(point))
+                    pointCount++
 
-                // Fuel detection
-                currentFuel?.let { fuel ->
-                    lastFuelLevel?.let { last ->
-                        val diff = fuel - last
-                        if (diff > 10f) {
-                            val fuelAdded = tankCapacity * diff / 100f
-                            uploadRepo.uploadFuelEvent(
-                                FuelEvent(fuelBefore = last, fuelAfter = fuel,
-                                    fuelAdded = round(fuelAdded * 10) / 10f, timestamp = location.time
-                                ), tripId
-                            )
-                            updateNotification("加油检测: +${String.format("%.1f", fuelAdded)}L")
+                    // Fuel detection
+                    currentFuel?.let { fuel ->
+                        lastFuelLevel?.let { last ->
+                            val diff = fuel - last
+                            if (diff > 10f) {
+                                val fuelAdded = tankCapacity * diff / 100f
+                                uploadRepo.uploadFuelEvent(
+                                    FuelEvent(fuelBefore = last, fuelAfter = fuel,
+                                        fuelAdded = round(fuelAdded * 10) / 10f, timestamp = location.time
+                                    ), tripId
+                                )
+                                withContext(Dispatchers.Main) {
+                                    updateNotification("加油检测: +${String.format("%.1f", fuelAdded)}L")
+                                }
+                            }
                         }
+                        lastFuelLevel = fuel
                     }
-                    lastFuelLevel = fuel
-                }
 
-                // Upload every 20 points (was 50) to reduce loss on sudden power-off
-                if (pointCount % 20 == 0) {
-                    val trip = db.tripDao().getTripById(tripId)
-                    uploadRepo.uploadPendingPoints(tripId, trip?.serverTripId)
-                }
+                    // Upload every 20 points (was 50) to reduce loss on sudden power-off
+                    if (pointCount % 20 == 0) {
+                        val trip = db.tripDao().getTripById(tripId)
+                        uploadRepo.uploadPendingPoints(tripId, trip?.serverTripId)
+                    }
 
-                updateNotification("已记录 $pointCount 个点")
+                    withContext(Dispatchers.Main) {
+                        updateNotification("已记录 $pointCount 个点")
+                    }
+                }
+            } catch (e: Exception) {
+                log("💥 onLocationChanged 协程崩溃: ${e.message}")
+                android.util.Log.e("CarLog-Crash", "onLocationChanged", e)
             }
         }
     }
@@ -395,7 +404,9 @@ class GpsTrackService : Service(), LocationListener {
         // 本地数据库标记行程已结束
         db.tripDao().endTripLocally(tripId, endTime, duration, distance, points.size, trip?.serverTripId)
         uploadRepo.uploadTrip(tripId, endTime, distance, avgSpeed, maxSpeed, duration, trip?.serverTripId)
-        updateNotification("行程结束: ${distance}km, ${duration}s")
+        withContext(Dispatchers.Main) {
+            updateNotification("行程结束: ${distance}km, ${duration}s")
+        }
     }
 
     private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
