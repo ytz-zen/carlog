@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
+import { checkCookieAuth, getApiKey } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key')
@@ -57,7 +58,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key')
-  if (!apiKey) {
+  const hasApiKey = apiKey && apiKey === await getApiKey()
+  const hasCookie = await checkCookieAuth(request)
+  if (!hasApiKey && !hasCookie) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

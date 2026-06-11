@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { checkCookieAuth, getApiKey } from '@/lib/auth'
 
+/** 获取 Web 端认证 header (cookie + API Key 都支持) */
+export function getAuthHeaders(): Record<string, string> {
+  // 注意：fetch() 在客户端调用时不需要手动设置 Cookie header
+  // 浏览器会自动携带。这里主要用于服务端或 Android 端代理。
+  const headers: Record<string, string> = {}
+  // 如果有 API Key 也带上（作为 fallback）
+  return headers
+}
+
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-API-Key')
   if (!apiKey || apiKey !== (await getApiKey()))

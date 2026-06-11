@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { getAuthHeaders } from '@/lib/auth'
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<string[]>([])
@@ -16,7 +15,7 @@ export default function LogsPage() {
       if (selectedLevel !== 'all') url.searchParams.set('level', selectedLevel)
       url.searchParams.set('limit', '500')
 
-      const res = await fetch(url.toString(), { headers: getAuthHeaders() })
+      const res = await fetch(url.toString())
       const data = await res.json()
       if (data.logs) {
         setLogs(data.logs)
