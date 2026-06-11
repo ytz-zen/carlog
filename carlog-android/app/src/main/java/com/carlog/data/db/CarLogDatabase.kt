@@ -76,7 +76,8 @@ data class TripEntity(
     val fuelPer100km: Float? = null,
     val pointCount: Int = 0,
     val uploadState: String = "IDLE",
-    val serverTripId: String? = null
+    val serverTripId: String? = null,
+    val startMode: String = "auto"
 )
 
 @Entity(tableName = "gps_points")
@@ -99,7 +100,7 @@ data class ConfigEntity(
     val value: String
 )
 
-@Database(entities = [TripEntity::class, GpsPointEntity::class, ConfigEntity::class], version = 1, exportSchema = false)
+@Database(entities = [TripEntity::class, GpsPointEntity::class, ConfigEntity::class], version = 2, exportSchema = false)
 abstract class CarLogDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun configDao(): ConfigDao
@@ -112,7 +113,7 @@ abstract class CarLogDatabase : RoomDatabase() {
                     context.applicationContext,
                     CarLogDatabase::class.java,
                     "carlog.db"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
         }
     }

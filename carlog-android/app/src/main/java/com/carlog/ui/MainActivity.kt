@@ -196,14 +196,13 @@ class MainActivity : AppCompatActivity() {
     ) {
         val active = db.tripDao().getActiveTrip()
         val carId = db.configDao().getString("car_id")
-        val trackingMode = db.configDao().getString("tracking_mode")
 
         if (active != null && active.endTime == null) {
             btnStart.isEnabled = false
             btnStart.alpha = 0.5f
 
-            // 显示自动/手动
-            val modeText = if (trackingMode == "manual") "🔵 手动记录" else "🟢 自动记录"
+            // 显示自动/手动（根据实际启动方式，而非全局配置）
+            val modeText = if (active.startMode == "manual") "🔵 手动记录" else "🟢 自动记录"
             tvMode.text = modeText
 
             val elapsed = (System.currentTimeMillis() - active.startTime) / 1000

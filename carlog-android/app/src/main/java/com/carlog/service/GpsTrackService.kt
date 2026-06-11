@@ -271,7 +271,8 @@ class GpsTrackService : Service(), LocationListener {
             val trip = TripEntity(
                 id = "trip_${System.currentTimeMillis()}",
                 tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
-                startTime = System.currentTimeMillis()
+                startTime = System.currentTimeMillis(),
+                startMode = "manual"
             )
             db.tripDao().insertTrip(trip)
             currentTripId = trip.id
@@ -380,7 +381,8 @@ class GpsTrackService : Service(), LocationListener {
                 val trip = TripEntity(
                     id = "trip_${System.currentTimeMillis()}",
                     tankId = getOrCreateTankId(), carId = getOrCreateCarId(),
-                    startTime = timestamp
+                    startTime = timestamp,
+                    startMode = "auto"
                 )
                 db.tripDao().insertTrip(trip)
                 currentTripId = trip.id
