@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
     const [tripCount, tripSum, fuelSum, spentSum] = await Promise.all([
       prisma.trip.count({ where }),
       prisma.trip.aggregate({ where, _sum: { distance: true } }),
-      prisma.fuelEvent.aggregate({ where: { ...(p.start ? { timestamp: { gte: p.start } } : {}), ...(carId ? { carId } : {}) } }),
-      prisma.fuelEvent.aggregate({ where: { ...(p.start ? { timestamp: { gte: p.start } } : {}), ...(carId ? { carId } : {}), totalPrice: { not: null } } })
+      prisma.fuelEvent.aggregate({ where: { ...(p.start ? { timestamp: { gte: p.start } } : {}), ...(carId ? { carId } : {}) }, _sum: { fuelAdded: true } }),
+      prisma.fuelEvent.aggregate({ where: { ...(p.start ? { timestamp: { gte: p.start } } : {}), ...(carId ? { carId } : {}), totalPrice: { not: null } }, _sum: { totalPrice: true } })
     ])
 
     const r2 = (v: number | null | undefined) => v !== null && v !== undefined ? Math.round(v * 100) / 100 : 0
