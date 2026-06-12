@@ -42,7 +42,11 @@ export async function DELETE(request: NextRequest) {
   await prisma.odometerEntry.deleteMany({ where: { carId: id } })
   await prisma.expense.deleteMany({ where: { carId: id } })
   await prisma.reminder.deleteMany({ where: { carId: id } })
-  await prisma.tank.deleteMany({ where: { car: { connect: { id } } } })
+  // Tank 的外键在 Tank 表上（tankId 指向 Car），先查后删
+  const tanks = await prisma.tank.findMany({ where: { tankId: id } })
+  for (const t of tanks) {
+    await prisma.tank.delete({ where: { id: t.id } })
+  }
   await prisma.car.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
