@@ -21,6 +21,7 @@ model Car {
   tankId          String           @unique
   trips           Trip[]
   fuelEvents      FuelEvent[]
+  androidLogs     AndroidLog[]
   notifConfig     NotificationConfig?
   odometerEntries OdometerEntry[]
   expenses        Expense[]
