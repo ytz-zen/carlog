@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   ])
 
   return NextResponse.json({
-    trips: trips.map(t => ({ id: t.id, startTime: t.startTime.getTime(), endTime: t.endTime?.getTime() ?? null, duration: t.duration,
+    trips: trips.map(t => ({ id: t.id, startTime: t.startTime ? new Date(t.startTime).getTime() : null, endTime: t.endTime ? new Date(t.endTime).getTime() : null, duration: t.duration,
       distance: t.distance, avgSpeed: t.avgSpeed, maxSpeed: t.maxSpeed, fuelConsumed: t.fuelConsumed,
       fuelPer100km: t.fuelPer100km, tankName: t.tank.name, carName: t.car.name, pointCount: t.pointCount })),
     total, page, pageSize: size

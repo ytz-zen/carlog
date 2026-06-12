@@ -36,6 +36,13 @@ export async function DELETE(request: NextRequest) {
   if (!await checkCookieAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  // 级联删除：先删关联数据
+  await prisma.trip.deleteMany({ where: { carId: id } })
+  await prisma.fuelEvent.deleteMany({ where: { carId: id } })
+  await prisma.odometerEntry.deleteMany({ where: { carId: id } })
+  await prisma.expense.deleteMany({ where: { carId: id } })
+  await prisma.reminder.deleteMany({ where: { carId: id } })
+  await prisma.tank.deleteMany({ where: { carId: id } })
   await prisma.car.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
