@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { checkApiKey } from '@/lib/auth'
+import { checkApiKey, getApiKey } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const key = request.headers.get('X-API-Key')
