@@ -36,17 +36,14 @@ export async function DELETE(request: NextRequest) {
   if (!await checkCookieAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  // 级联删除：先删关联数据
+  // 级联删除：先删关联数据（按 id 精确删除，不影响其他 car）
   await prisma.trip.deleteMany({ where: { carId: id } })
   await prisma.fuelEvent.deleteMany({ where: { carId: id } })
   await prisma.odometerEntry.deleteMany({ where: { carId: id } })
   await prisma.expense.deleteMany({ where: { carId: id } })
   await prisma.reminder.deleteMany({ where: { carId: id } })
-  // Tank 的外键在 Tank 表上（tankId 指向 Car），先查后删
-  const tanks = await prisma.tank.findMany({ where: { tankId: id } })
-  for (const t of tanks) {
-    await prisma.tank.delete({ where: { id: t.id } })
-  }
+  // Tank 通过 relation car 关联，先删关联的 tank（一个 car 最多一个 tank）
+  await prisma.tank.deleteMany({ where: { car: { is: { id } } } })
   await prisma.car.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
