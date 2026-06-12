@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
-export default function ConsumptionChart() {
+export default function ConsumptionChart({ carId }: { carId?: string | null }) {
   const [data, setData] = useState<{date: string; per100km: number | null}[]>([])
 
   useEffect(() => {
