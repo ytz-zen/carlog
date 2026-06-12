@@ -10,25 +10,26 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
-    "next": "^15.4.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@prisma/client": "^6.5.0",
     "@prisma/adapter-pg": "^6.5.0",
-    "pg": "^8.13",
-    "recharts": "^2.15.1",
+    "@prisma/client": "^6.5.0",
     "date-fns": "^4.1.0",
     "jose": "^5.9.6",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "next": "^15.4.0",
+    "pg": "^8.13",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.14",
     "@types/node": "^22",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "typescript": "^5",
-    "@types/leaflet": "^1.9.14",
     "prisma": "^6.5.0",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

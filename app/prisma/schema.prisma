@@ -22,7 +22,7 @@ model Car {
   trips           Trip[]
   fuelEvents      FuelEvent[]
   androidLogs     AndroidLog[]
-  notifConfig     NotificationConfig? @relation(name: "CarNotifConfig", fields: [notifConfigId], references: [id], onDelete: Cascade)
+  notifConfig     NotificationConfig? @relation(name: "CarNotifConfig")
   notifConfigId   String?             @unique
   odometerEntries OdometerEntry[]
   expenses        Expense[]
