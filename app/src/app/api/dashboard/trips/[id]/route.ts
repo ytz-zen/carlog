@@ -19,10 +19,13 @@ export async function GET(
   })
 
   return NextResponse.json({
-    trip: { id: trip.id, startTime: trip.startTime, endTime: trip.endTime, duration: trip.duration,
+    trip: { id: trip.id, 
+            startTime: trip.startTime.getTime(),
+            endTime: trip.endTime?.getTime() ?? null,
+            duration: trip.duration,
             distance: trip.distance, avgSpeed: trip.avgSpeed, maxSpeed: trip.maxSpeed,
             fuelConsumed: trip.fuelConsumed, fuelPer100km: trip.fuelPer100km, tankName: trip.tank.name },
-    points: points.map(p => ({ timestamp: p.timestamp, lat: p.latitude, lng: p.longitude, speed: p.speed, altitude: p.altitude, bearing: p.bearing }))
+    points: points.map(p => ({ timestamp: p.timestamp.getTime(), lat: p.latitude, lng: p.longitude, speed: p.speed, altitude: p.altitude, bearing: p.bearing }))
   })
 }
 

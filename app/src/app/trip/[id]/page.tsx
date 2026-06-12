@@ -38,47 +38,60 @@ export default function TripDetailPage() {
   const router = useRouter()
   const mapRef = useRef<L.Map | null>(null)
   const mapEl = useRef<HTMLDivElement>(null)
-  const [trip, setTrip] = useState<TripDetail | null>(null)
+  const [tripDetail, setTripDetail] = useState<{ trip: TripDetail; points: GpsPoint[] } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const id = params.id as string
     fetch(`/api/dashboard/trips/${id}`)
-      .then(r => r.json()).then(d => { setTrip(d); setLoading(false) })
+      .then(r => r.json()).then(d => { setTripDetail(d); setLoading(false) })
       .catch(() => setLoading(false))
   }, [params.id])
 
+  // API 返回 { trip: {...}, points: [...] }，解包出来
+  const apiTrip = tripDetail?.trip ?? null
+  const apiPoints = tripDetail?.points ?? []
+
   useEffect(() => {
-    if (!trip?.points?.length || !mapEl.current || mapRef.current) return
+    if (!apiPoints?.length || !mapEl.current || mapRef.current) return
 
     const map = L.map(mapEl.current).setView(
-      [trip.points[0].lat, trip.points[0].lng], 14
+      [apiPoints[0].lat, apiPoints[0].lng], 14
     )
 
-    // Tianditu tile layer
+    // Tianditu tile layer with OpenStreetMap fallback
     const tk = process.env.NEXT_PUBLIC_TIANDITU_KEY || ''
-    L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${tk}`, {
-      subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-      maxZoom: 18,
-      attribution: '© 天地图',
-    }).addTo(map)
-    // Add label overlay
-    L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${tk}`, {
-      subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-      maxZoom: 18,
-    }).addTo(map)
+    if (tk) {
+      // 天地图底图
+      L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${tk}`, {
+        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+        maxZoom: 18,
+        attribution: '© 天地图',
+      }).addTo(map)
+      // 标注叠加层
+      L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${tk}`, {
+        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+        maxZoom: 18,
+      }).addTo(map)
+    } else {
+      // 天地图 key 缺失时 fallback 到 OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '© OpenStreetMap contributors',
+      }).addTo(map)
+    }
 
     // Draw route with speed-based colors
-    const points = trip.points.map(p => [p.lat, p.lng] as [number, number])
+    const points = apiPoints.map(p => [p.lat, p.lng] as [number, number])
     const polyline = L.polyline(points, { color: '#2563EB', weight: 4, opacity: 0.7 }).addTo(map)
 
     // Start marker (green)
-    const start = trip.points[0]
+    const start = apiPoints[0]
     L.circleMarker([start.lat, start.lng], { radius: 8, color: '#10B981', fillColor: '#10B981', fillOpacity: 1 }).addTo(map)
       .bindPopup('<b>起点</b><br/>' + new Date(start.timestamp).toLocaleString('zh-CN'))
 
     // End marker (red)
-    const end = trip.points[trip.points.length - 1]
+    const end = apiPoints[apiPoints.length - 1]
     L.circleMarker([end.lat, end.lng], { radius: 8, color: '#EF4444', fillColor: '#EF4444', fillOpacity: 1 }).addTo(map)
       .bindPopup('<b>终点</b><br/>' + new Date(end.timestamp).toLocaleString('zh-CN'))
 
@@ -86,10 +99,10 @@ export default function TripDetailPage() {
     mapRef.current = map
 
     return () => { map.remove(); mapRef.current = null }
-  }, [trip])
+  }, [apiTrip, apiPoints])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">加载中...</div>
-  if (!trip) return <div className="min-h-screen flex items-center justify-center text-red-500">行程不存在</div>
+  if (!apiTrip) return <div className="min-h-screen flex items-center justify-center text-red-500">行程不存在</div>
 
   const fmtDist = (d: number) => d > 100 ? `${(d/1000).toFixed(1)}km` : `${d.toFixed(1)}km`
   const fmtDur = (s: number) => {
@@ -107,13 +120,13 @@ export default function TripDetailPage() {
         {/* Info cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            ['里程', fmtDist(trip.distance || 0), 'text-blue-600'],
-            ['时长', fmtDur(trip.duration || 0), 'text-green-600'],
-            ['均速', `${trip.avgSpeed?.toFixed(1) || '0'} km/h`, 'text-purple-600'],
-            ['最高速', `${trip.maxSpeed?.toFixed(1) || '0'} km/h`, 'text-orange-600'],
-            ['耗油', `${trip.fuelConsumed?.toFixed(1) || '0'} L`, 'text-amber-600'],
-            ['百公里油耗', `${trip.fuelPer100km?.toFixed(1) || '-'} L`, 'text-red-600'],
-            ['时间', trip.startTime ? new Date(trip.startTime).toLocaleDateString('zh-CN') : '-', 'text-gray-600'],
+            ['里程', fmtDist(apiTrip.distance || 0), 'text-blue-600'],
+            ['时长', fmtDur(apiTrip.duration || 0), 'text-green-600'],
+            ['均速', `${apiTrip.avgSpeed?.toFixed(1) || '0'} km/h`, 'text-purple-600'],
+            ['最高速', `${apiTrip.maxSpeed?.toFixed(1) || '0'} km/h`, 'text-orange-600'],
+            ['耗油', `${apiTrip.fuelConsumed?.toFixed(1) || '0'} L`, 'text-amber-600'],
+            ['百公里油耗', `${apiTrip.fuelPer100km?.toFixed(1) || '-'} L`, 'text-red-600'],
+            ['时间', apiTrip.startTime ? new Date(apiTrip.startTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-', 'text-gray-600'],
           ].map(([label, val, color]) => (
             <div key={label} className="bg-white rounded-lg border p-3 shadow-sm">
               <div className="text-xs text-gray-400">{label}</div>
@@ -126,7 +139,7 @@ export default function TripDetailPage() {
         <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
           <div className="p-3 border-b text-sm font-semibold text-gray-700">🗺️ 行驶轨迹</div>
           <div ref={mapEl} className="h-[500px] w-full" />
-          {(!trip.points || trip.points.length === 0) && (
+          {(!apiPoints || apiPoints.length === 0) && (
             <div className="p-12 text-center text-gray-400">暂无轨迹数据</div>
           )}
         </div>

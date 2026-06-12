@@ -124,14 +124,24 @@ class GpsTrackService : Service(), LocationListener {
                 val avgSpeed = if (speedCount > 0) round(totalSpeed / speedCount * 10) / 10f else 0f
                 val duration = ((now - active.startTime) / 1000).toInt()
                 log("恢复行程: 里程=${distance}km, 时长=${duration}s")
-                db.tripDao().updateUploadState(active.id, "IDLE")
-                // 先尝试创建服务端行程
+                
+                // 关键修复：先本地结束行程（清除 endTime 和 currentTripId），再上传
                 val serverId = uploadRepo.initializeTrip()
                 if (!serverId.isNullOrEmpty()) {
                     db.tripDao().updateServerTripId(active.id, serverId)
                 }
+                
+                // 先本地结束行程 → 清除 endTime，防止继续记录
+                db.tripDao().endTripLocally(active.id, now, duration, distance, points.size, serverId)
+                
+                // 再上传结束到服务端
                 uploadRepo.uploadTrip(active.id, now, distance, avgSpeed, maxSpeed, duration, serverId)
-                log("恢复行程完成: ${active.id}")
+                
+                // 清除内存中的 currentTripId（防止 GPS 回调继续记录到此旧行程）
+                currentTripId = null
+                tripDetector = TripDetector()
+                pointCount = 0
+                log("恢复行程完成并已本地结束: ${active.id}")
             }
         }
 

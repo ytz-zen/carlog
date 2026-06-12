@@ -80,8 +80,7 @@ export default function TripsPage() {
                 {trips.map(t => (
                   <tr key={t.id} className="border-b last:border-0 hover:bg-slate-50">
                     <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
-                      {new Date(t.startTime).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })}
-                      <span className="text-slate-300 ml-1">{new Date(t.startTime).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+                      {new Date(t.startTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="py-3 px-4 text-right text-indigo-600 font-medium">{t.distance !== null ? `${t.distance} km` : '-'}</td>
                     <td className="py-3 px-4 text-right text-slate-600">{t.duration !== null ? fmt(t.duration) : '-'}</td>
