@@ -24,12 +24,21 @@ export default function CarsPage() {
 
   const remove = async (id: string) => {
     if (!confirm('确定删除该车辆及所有数据？')) return
-    await fetch('/api/cars', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ id }),
-    })
-    fetchCars()
+    try {
+      const res = await fetch('/api/cars', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert('删除失败：' + (data.error || '未知错误'))
+        return
+      }
+      fetchCars()
+    } catch (err: any) {
+      alert('删除失败：' + err.message)
+    }
   }
 
   return (

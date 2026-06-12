@@ -17,12 +17,13 @@ model Car {
   isOnline        Boolean          @default(false)
   createdAt       DateTime         @default(now())
 
-  tank            Tank             @relation(fields: [tankId], references: [id])
+  tank            Tank             @relation(name: "CarToTank", fields: [tankId], references: [id], onDelete: Cascade)
   tankId          String           @unique
   trips           Trip[]
   fuelEvents      FuelEvent[]
   androidLogs     AndroidLog[]
-  notifConfig     NotificationConfig?
+  notifConfig     NotificationConfig? @relation(name: "CarNotifConfig", fields: [notifConfigId], references: [id], onDelete: Cascade)
+  notifConfigId   String?             @unique
   odometerEntries OdometerEntry[]
   expenses        Expense[]
   reminders       Reminder[]
@@ -34,7 +35,7 @@ model Tank {
   capacity     Float
   createdAt    DateTime    @default(now())
 
-  car          Car?
+  car          Car?        @relation(name: "CarToTank")
 
   trips        Trip[]
   fuelEvents   FuelEvent[]
@@ -178,7 +179,7 @@ model NotificationConfig {
   id          String   @id @default(uuid())
   webhookUrl  String
   carId       String   @unique
-  car         Car      @relation(fields: [carId], references: [id])
+  car         Car      @relation(name: "CarNotifConfig", fields: [carId], references: [id], onDelete: Cascade)
 
   onTripEnd   Boolean  @default(true)
   dailyDigest Boolean  @default(true)
