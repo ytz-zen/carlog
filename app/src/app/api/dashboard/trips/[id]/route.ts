@@ -10,23 +10,28 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const { id } = await params
-  const trip = await prisma.trip.findUnique({ where: { id }, include: { tank: { select: { name: true } } } })
-  if (!trip) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  try {
+    const trip = await prisma.trip.findUnique({ where: { id }, include: { tank: { select: { name: true } } } })
+    if (!trip) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const points = await prisma.gpsPoint.findMany({
-    where: { tripId: id }, orderBy: { timestamp: 'asc' },
-    select: { timestamp: true, latitude: true, longitude: true, speed: true, altitude: true, bearing: true }
-  })
+    const points = await prisma.gpsPoint.findMany({
+      where: { tripId: id }, orderBy: { timestamp: 'asc' },
+      select: { timestamp: true, latitude: true, longitude: true, speed: true, altitude: true, bearing: true }
+    })
 
-  return NextResponse.json({
-    trip: { id: trip.id, 
-            startTime: trip.startTime ? new Date(trip.startTime).getTime() : null,
-            endTime: trip.endTime ? new Date(trip.endTime).getTime() : null,
-            duration: trip.duration,
-            distance: trip.distance, avgSpeed: trip.avgSpeed, maxSpeed: trip.maxSpeed,
-            fuelConsumed: trip.fuelConsumed, fuelPer100km: trip.fuelPer100km, tankName: trip.tank.name },
-    points: points.map(p => ({ timestamp: p.timestamp ? new Date(p.timestamp).getTime() : 0, lat: p.latitude, lng: p.longitude, speed: p.speed, altitude: p.altitude, bearing: p.bearing }))
-  })
+    return NextResponse.json({
+      trip: { id: trip.id, 
+              startTime: trip.startTime ? new Date(trip.startTime).getTime() : null,
+              endTime: trip.endTime ? new Date(trip.endTime).getTime() : null,
+              duration: trip.duration,
+              distance: trip.distance, avgSpeed: trip.avgSpeed, maxSpeed: trip.maxSpeed,
+              fuelConsumed: trip.fuelConsumed, fuelPer100km: trip.fuelPer100km, tankName: trip.tank?.name },
+      points: points.map(p => ({ timestamp: p.timestamp ? new Date(p.timestamp).getTime() : 0, lat: p.latitude, lng: p.longitude, speed: p.speed, altitude: p.altitude, bearing: p.bearing }))
+    })
+  } catch (e) {
+    console.error('Trip detail error:', e)
+    return NextResponse.json({ error: 'Internal error', details: String(e) }, { status: 500 })
+  }
 }
 
 export async function DELETE(
