@@ -42,7 +42,7 @@ export async function DELETE(request: NextRequest) {
   await prisma.odometerEntry.deleteMany({ where: { carId: id } })
   await prisma.expense.deleteMany({ where: { carId: id } })
   await prisma.reminder.deleteMany({ where: { carId: id } })
-  await prisma.tank.deleteMany({ where: { carId: id } })
+  await prisma.tank.deleteMany({ where: { car: { connect: { id } } } })
   await prisma.car.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
