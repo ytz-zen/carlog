@@ -4,11 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
-// 动态导入 Leaflet，避免 SSR 时引用 window
-const LeafletInit = dynamic(
-  () => import('@/lib/leaflet-init').catch(() => ({})),
-  { ssr: false }
-)
+// Leaflet 已在 _app.tsx 中动态加载，避免 SSR 时引用 window
 
 interface GpsPoint {
   lat: number
