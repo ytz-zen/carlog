@@ -36,14 +36,18 @@ export async function DELETE(request: NextRequest) {
   if (!await checkCookieAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  // 级联删除：先删关联数据（按 id 精确删除，不影响其他 car）
+  // 1. 先获取该 car 的 tankId（Tank 的 FK 在 Car 上）
+  const car = await prisma.car.findUnique({ where: { id }, select: { tankId: true } })
+  if (!car) return NextResponse.json({ error: 'Car not found' }, { status: 404 })
+  // 2. 按 carId 精确删除关联数据（不影响同名车辆）
   await prisma.trip.deleteMany({ where: { carId: id } })
   await prisma.fuelEvent.deleteMany({ where: { carId: id } })
   await prisma.odometerEntry.deleteMany({ where: { carId: id } })
   await prisma.expense.deleteMany({ where: { carId: id } })
   await prisma.reminder.deleteMany({ where: { carId: id } })
-  // Tank 通过 relation car 关联，先删关联的 tank（一个 car 最多一个 tank）
-  await prisma.tank.deleteMany({ where: { car: { is: { id } } } })
+  // 3. 删除关联的 tank
+  await prisma.tank.deleteMany({ where: { id: car.tankId } })
+  // 4. 删除 car（notificationConfig 有 carId @unique，自动级联删除）
   await prisma.car.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
