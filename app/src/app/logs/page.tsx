@@ -1,8 +1,15 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 
+interface LogEntry {
+  id: string
+  timestamp: string
+  level: string
+  message: string
+}
+
 export default function LogsPage() {
-  const [logs, setLogs] = useState<string[]>([])
+  const [logs, setLogs] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [selectedLevel, setSelectedLevel] = useState('all')
