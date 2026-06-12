@@ -51,35 +51,41 @@ export default function TripDetailPage() {
   // API 返回 { trip: {...}, points: [...] }，解包出来
   const apiTrip = tripDetail?.trip ?? null
   const apiPoints = tripDetail?.points ?? []
+  const [tk, setTk] = useState('')
 
   useEffect(() => {
-    if (!apiPoints?.length || !mapEl.current || mapRef.current) return
+    fetch('/api/config/tianditu')
+      .then(r => r.json()).then(d => setTk(d.key || ''))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!apiPoints?.length || !mapEl.current) return
 
     const map = L.map(mapEl.current).setView(
       [apiPoints[0].lat, apiPoints[0].lng], 14
     )
 
     // Tianditu tile layer with OpenStreetMap fallback
-    const tk = process.env.NEXT_PUBLIC_TIANDITU_KEY || ''
-    if (tk) {
-      // 天地图底图
-      L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${tk}`, {
-        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-        maxZoom: 18,
-        attribution: '© 天地图',
-      }).addTo(map)
-      // 标注叠加层
-      L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${tk}`, {
-        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-        maxZoom: 18,
-      }).addTo(map)
-    } else {
-      // 天地图 key 缺失时 fallback 到 OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '© OpenStreetMap contributors',
-      }).addTo(map)
+    const addTileLayers = (key: string) => {
+      if (key) {
+        L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${key}`, {
+          subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+          maxZoom: 18,
+          attribution: '© 天地图',
+        }).addTo(map)
+        L.tileLayer(`https://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${key}`, {
+          subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+          maxZoom: 18,
+        }).addTo(map)
+      } else {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '© OpenStreetMap contributors',
+        }).addTo(map)
+      }
     }
+    addTileLayers(tk)
 
     // Draw route with speed-based colors
     const points = apiPoints.map(p => [p.lat, p.lng] as [number, number])
@@ -99,7 +105,7 @@ export default function TripDetailPage() {
     mapRef.current = map
 
     return () => { map.remove(); mapRef.current = null }
-  }, [apiTrip, apiPoints])
+  }, [apiTrip, apiPoints, tk])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">加载中...</div>
   if (!apiTrip) return <div className="min-h-screen flex items-center justify-center text-red-500">行程不存在</div>
